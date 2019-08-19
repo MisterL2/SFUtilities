@@ -7,18 +7,12 @@ import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
-import org.spongepowered.api.event.cause.Cause;
-import org.spongepowered.api.event.cause.EventContext;
-import org.spongepowered.api.event.cause.EventContextKey;
 import org.spongepowered.api.event.filter.cause.Root;
-import org.spongepowered.api.world.DimensionType;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class BlockEventListener {
     private Logger logger;
@@ -114,7 +108,7 @@ public class BlockEventListener {
 
             long unixTime = new Date().getTime() / 1000L;
             logger.info("should call dbhelper now!");
-            dbHelper.logBlockBreak(player.getName(),blockName,blockX,blockY,blockZ,unixTime,dimensionId);
+            dbHelper.logBlockBreak(player.getUniqueId().toString(),blockName,blockX,blockY,blockZ,unixTime,dimensionId);
         }
     }
 }

@@ -38,7 +38,7 @@ public class SFUtilities {
     public void init(GameInitializationEvent event) {
         logger.info("SFUtilities loading...");
         DBHelper dbHelper = new SQLiteHelper(logger);
-        buildCommands();
+        buildCommands(dbHelper);
         Sponge.getEventManager().registerListeners(this, new BlockEventListener(logger,dbHelper));
         logger.info("SFUtilities loaded!");
 
@@ -55,7 +55,7 @@ public class SFUtilities {
 
     }
 
-    private void buildCommands() {
+    private void buildCommands(DBHelper dbHelper) {
         ArrayList<Command> activatedCommands = new ArrayList<>();
         //Select commands based on config
         activatedCommands.add(new Feed(logger,"feed","restorehunger"));
@@ -63,6 +63,10 @@ public class SFUtilities {
 
         activatedCommands.add(new Heal(logger,"heal","restorehealth"));
         activatedCommands.add(new SetHealth(logger,"sethealth","healthset"));
+
+        //If logging is enabled
+        activatedCommands.add(new GetBlockBreakLog(dbHelper,logger,"breaklog","blockbreaklog"));
+
         //Create, log and register the selected commands
         for (Command command: activatedCommands) {
             logger.info("Command " + command.getClass().getSimpleName() + " is now being loaded!");
