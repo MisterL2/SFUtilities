@@ -13,6 +13,7 @@ import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.plugin.Plugin;
 
+import java.io.File;
 import java.util.ArrayList;
 @Plugin(
         id = "sfutilities",
@@ -41,7 +42,13 @@ public class SFUtilities {
         logger.info("SFUtilities loaded!");
 
         //IF it doesnt exist yet! -> TBD Check if it does
-        dbHelper.setupDatabase();
+
+        boolean databaseExists = new File("/SFUtil/blocklogs.db").exists();
+        if(!databaseExists) {
+            logger.warn("No SQLite database found! Creating a new one.");
+            new File("SFUtil").mkdir(); //Attempts to make a new folder for the database. If it already exists, returns false and nothing else happens.
+            dbHelper.setupDatabase();
+        }
 
     }
 

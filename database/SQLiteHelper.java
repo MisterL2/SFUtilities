@@ -22,7 +22,7 @@ public class SQLiteHelper implements DBHelper {
 
     @Override
     public void setupDatabase() {
-        String url = "jdbc:sqlite/SFUtil/blocklogs";
+        String url = "jdbc:sqlite:SFUtil/blocklogs.db";
 
         try (Connection conn = DriverManager.getConnection(url)) {
             if (conn != null) {
