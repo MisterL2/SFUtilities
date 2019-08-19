@@ -1,6 +1,7 @@
 package misterl2.sfutilities;
 
 import com.google.inject.Inject;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import misterl2.sfutilities.commands.*;
 import misterl2.sfutilities.database.DBHelper;
 import misterl2.sfutilities.logging.BlockEventListener;
@@ -43,12 +44,14 @@ public class SFUtilities {
 
         //IF it doesnt exist yet! -> TBD Check if it does
 
-        boolean databaseExists = new File("/SFUtil/blocklogs.db").exists();
+        boolean databaseExists = new File("SFUtil/blocklogs.db").exists();
         if(!databaseExists) {
             logger.warn("No SQLite database found! Creating a new one.");
             new File("SFUtil").mkdir(); //Attempts to make a new folder for the database. If it already exists, returns false and nothing else happens.
             dbHelper.setupDatabase();
         }
+
+
 
     }
 

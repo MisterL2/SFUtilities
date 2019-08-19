@@ -7,7 +7,7 @@ package misterl2.sfutilities.database;
 public class MySQLHelper implements DBHelper {
 
     @Override
-    public void logBlock(String changeType, String playerName, String block, int x, int y, int z, long unixTime, char dimensionId) {
+    public void logBlockBreak(String playerName, String block, int x, int y, int z, long unixTime, char dimensionId) {
 
     }
 

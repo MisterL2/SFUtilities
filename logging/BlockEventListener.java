@@ -113,7 +113,8 @@ public class BlockEventListener {
             }
 
             long unixTime = new Date().getTime() / 1000L;
-            dbHelper.logBlock("BREAK",player.getName(),blockName,blockX,blockY,blockZ,unixTime,dimensionId);
+            logger.info("should call dbhelper now!");
+            dbHelper.logBlockBreak(player.getName(),blockName,blockX,blockY,blockZ,unixTime,dimensionId);
         }
     }
 }
