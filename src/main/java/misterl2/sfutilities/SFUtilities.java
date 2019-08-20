@@ -75,6 +75,10 @@ public class SFUtilities {
             }
             ConfigurationNode commands = rootNode.getNode("commands");
             ConfigurationNode feed = commands.getNode("feed");
+            boolean feedEnabled = feed.getBoolean();
+            System.out.println(feedEnabled);
+            System.out.println(feedEnabled);
+            System.out.println(feedEnabled);
             feed.setValue(true);
             ConfigurationNode heal = commands.getNode("heal");
             heal.setValue(true);
