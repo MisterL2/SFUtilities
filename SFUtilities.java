@@ -6,16 +6,28 @@ import misterl2.sfutilities.commands.*;
 import misterl2.sfutilities.database.DBHelper;
 import misterl2.sfutilities.logging.BlockEventListener;
 import misterl2.sfutilities.database.SQLiteHelper;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.ConfigurationOptions;
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.spec.CommandSpec;
+import org.spongepowered.api.config.ConfigDir;
+import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.plugin.Plugin;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
+
 @Plugin(
         id = "sfutilities",
         name = "SFUtilities",
@@ -30,6 +42,16 @@ public class SFUtilities {
     @Inject
     private Logger logger;
 
+//    @Inject
+//    @ConfigDir(sharedRoot = true)
+//    private Path configDir;
+
+    private Path configFile = Paths.get( "config/sfutilities.conf");
+    private ConfigurationLoader<CommentedConfigurationNode> configLoader = HoconConfigurationLoader.builder().setPath(configFile).build();
+
+
+
+
     @Listener
     public void onServerStart(GameStartedServerEvent event) {
     }
@@ -37,6 +59,35 @@ public class SFUtilities {
     @Listener
     public void init(GameInitializationEvent event) {
         logger.info("SFUtilities loading...");
+        logger.info("Loading config...");
+        try {
+            //CommentedConfigurationNode load = configLoader.load();
+            //configLoader.save(load);
+            //CommentedConfigurationNode emptyNode = configLoader.createEmptyNode(ConfigurationOptions.defaults());
+
+            ConfigurationNode rootNode = configLoader.load(); //Creates config correctly
+            List<? extends ConfigurationNode> childrenList = rootNode.getChildrenList();
+            ConfigurationNode appendedNode = rootNode.getAppendedNode();
+            logger.info(appendedNode.getString()); //Returns null
+            logger.info("YOLO");
+            for (ConfigurationNode node: childrenList) { //empty list
+                logger.info(node.getString());
+            }
+            ConfigurationNode commands = rootNode.getNode("commands");
+            ConfigurationNode feed = commands.getNode("feed");
+            feed.setValue(true);
+            ConfigurationNode heal = commands.getNode("heal");
+            heal.setValue(true);
+
+            ConfigurationNode logging = rootNode.getNode("logging");
+            logging.setValue(true);
+            System.out.println(configLoader.canSave());
+            configLoader.save(rootNode);
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+            e.printStackTrace();
+        }
+        logger.info("Finished loading config!");
         DBHelper dbHelper = new SQLiteHelper(logger);
         buildCommands(dbHelper);
         Sponge.getEventManager().registerListeners(this, new BlockEventListener(logger,dbHelper));
