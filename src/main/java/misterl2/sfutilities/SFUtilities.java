@@ -42,9 +42,9 @@ public class SFUtilities {
     @Inject
     private Logger logger;
 
-//    @Inject
-//    @ConfigDir(sharedRoot = true)
-//    private Path configDir;
+    @Inject
+    @DefaultConfig(sharedRoot = true)
+    private Path configDir;
 
     private Path configFile = Paths.get( "config/sfutilities.conf");
     private ConfigurationLoader<CommentedConfigurationNode> configLoader = HoconConfigurationLoader.builder().setPath(configFile).build();
