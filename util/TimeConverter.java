@@ -2,9 +2,9 @@ package misterl2.sfutilities.util;
 
 public class TimeConverter {
 
-    public static String secondsToTimeString(long timeInSeconds) {
+    public static String secondsToTimeString(long timeInDeciSeconds) { //The time is actually in 0.1s to provide compromise between accuracy and storage space
         String relativeTime;
-
+        long timeInSeconds = timeInDeciSeconds / 10; //Convert to actual seconds
         long days = Math.floorDiv(timeInSeconds, (3600 * 24));
         timeInSeconds -= (days * 3600 * 24);
 

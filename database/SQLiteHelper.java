@@ -29,8 +29,19 @@ public class SQLiteHelper implements DBHelper {
     public void logBlockBreak(String playerUUID, String block, int x, int y, int z, long unixTime, char dimensionId) {
         logger.info("Logging block!");
         logger.info("BREAK" + " " + playerUUID + " " + block + " " + x + " " + y + " "  + z + " " + unixTime + " " + dimensionId);
+        logBlockChange("BREAK",playerUUID,block,x,y,z,unixTime,dimensionId);
+    }
+
+    @Override
+    public void logBlockPlace(String playerUUID, String block, int x, int y, int z, long unixTime, char dimensionId) {
+        logger.info("Logging block!");
+        logger.info("BREAK" + " " + playerUUID + " " + block + " " + x + " " + y + " "  + z + " " + unixTime + " " + dimensionId);
+        logBlockChange("PLACE",playerUUID,block,x,y,z,unixTime,dimensionId);
+    }
+
+    private void logBlockChange(String tableName, String playerUUID, String block, int x, int y, int z, long unixTime, char dimensionId) {
         try (Connection conn = cpds.getConnection()){
-            PreparedStatement pstmt = conn.prepareStatement("INSERT INTO BREAK VALUES (?,?,?,?,?,?,?)");
+            PreparedStatement pstmt = conn.prepareStatement("INSERT INTO " + tableName + " VALUES (?,?,?,?,?,?,?)");
             pstmt.setString(1,playerUUID);
             pstmt.setString(2,block);
             pstmt.setInt(3,x);
@@ -46,22 +57,30 @@ public class SQLiteHelper implements DBHelper {
             logger.error(e.getMessage());
             e.printStackTrace();
         }
-
     }
 
 
     @Override
     public List<String> getBlockBreakLog(int x, int y, int z, char dimension) {
+        return getBlockChangedLog("break",x,y,z,dimension);
+    }
+
+    @Override
+    public List<String> getBlockPlaceLog(int x, int y, int z, char dimension) {
+        return getBlockChangedLog("place",x,y,z,dimension);
+    }
+
+    private List<String> getBlockChangedLog(String tableName, int x, int y, int z, char dimension) {
         List<String> logs = new ArrayList<>();
         try (Connection conn = cpds.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT player, block, unixtime FROM break WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT 10");
+            PreparedStatement pstmt = conn.prepareStatement("SELECT player, block, unixtime FROM " + tableName + " WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT 10");
             pstmt.setInt(1,x);
             pstmt.setInt(2,y);
             pstmt.setInt(3,z);
             pstmt.setString(4,String.valueOf(dimension));
             ResultSet resultSet = pstmt.executeQuery();
 
-            long currentUnixtime = new Date().getTime() / 1000L;
+            long currentUnixtime = new Date().getTime() / 100L; //in 0.1s
 
             while(resultSet.next()) {
                 String playerUUID = resultSet.getString("player");
@@ -83,8 +102,12 @@ public class SQLiteHelper implements DBHelper {
                 } else {
                     playerName = maybePlayer.get().getName();
                 }
-
-                String logRow = playerName + " broke \"" + block + "\" " + timeSinceString + " ago!";
+                String logRow;
+                if(tableName.toLowerCase().equals("break")) {
+                    logRow = playerName + " broke \"" + block + "\" " + timeSinceString + " ago!";
+                } else {
+                    logRow = playerName + " placed \"" + block + "\" " + timeSinceString + " ago!";
+                }
                 logs.add(logRow);
             }
         } catch (SQLException e) {
@@ -103,7 +126,7 @@ public class SQLiteHelper implements DBHelper {
         try (Connection conn = DriverManager.getConnection(url)) {
             if (conn != null) {
                 Statement statement = conn.createStatement();
-                String sql = "CREATE TABLE break (\n" +
+                String createBreak = "CREATE TABLE break (\n" +
                         "player TEXT NOT NULL,\n" +
                         "block TEXT NOT NULL,\n" +
                         "x INT NOT NULL,\n" +
@@ -112,7 +135,17 @@ public class SQLiteHelper implements DBHelper {
                         "unixtime INT NOT NULL,\n" +
                         "dimension CHAR(1) NOT NULL\n" +
                         ");";
-                statement.execute(sql);
+                String createPlace =  "CREATE TABLE place (\n" +
+                "player TEXT NOT NULL,\n" +
+                        "block TEXT NOT NULL,\n" +
+                        "x INT NOT NULL,\n" +
+                        "y INT NOT NULL,\n" +
+                        "z INT NOT NULL,\n" +
+                        "unixtime INT NOT NULL,\n" +
+                        "dimension CHAR(1) NOT NULL\n" +
+                        ");";
+                statement.execute(createBreak);
+                statement.execute(createPlace);
                 statement.close();
 //                DatabaseMetaData meta = conn.getMetaData();
             }

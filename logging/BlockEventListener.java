@@ -25,36 +25,6 @@ public class BlockEventListener {
 
     @Listener
     public void onBlockBreak (ChangeBlockEvent.Break event, @Root Player player) {
-//        Cause cause = event.getCause();
-//        logger.info("CAUSE");
-//        logger.info(cause.root().toString());
-//        for (Object o : cause.all()) {
-//            logger.info(o.toString());
-//        }
-//
-//
-//        logger.info("CONTEXT");
-//        EventContext context = event.getContext();
-//
-//        Set<EventContextKey<?>> keySet = context.keySet();
-//        Map<EventContextKey<?>, Object> map = context.asMap();
-//
-//        for (EventContextKey key : keySet) {
-//            logger.info("Key");
-//            logger.info(key.getName());
-//            logger.info(key.getAllowedType().getSimpleName());
-//            logger.info(key.getId());
-//            logger.info(key.toString());
-//            logger.info("Value");
-//            Object o = map.get(key);
-//            logger.info(o.toString());
-//        }
-//
-//
-//
-//        logger.info("SOURCE");
-//        Object source = event.getSource();
-//        logger.info(source.toString());
 
         logger.info("TRANSACTIONS");
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
@@ -62,32 +32,9 @@ public class BlockEventListener {
 
             BlockSnapshot original = t.getOriginal();
             logger.info(original.getLocation().toString());
-//            logger.info(original.getCreator().toString());
-//            logger.info(original.getExtendedState().toString());
-//            logger.info(original.getState().toString());
-//            logger.info(original.getNotifier().toString());
-//
-//            BlockSnapshot tDefault = t.getDefault();
-//
-//            logger.info(tDefault.getCreator().toString());
-//            logger.info(tDefault.getExtendedState().toString());
-//            logger.info(tDefault.getState().toString());
-//            logger.info(tDefault.getNotifier().toString());
-
-//            BlockSnapshot aFinal = t.getFinal();
 
             logger.info("Location");
 
-
-//            logger.info(aFinal.getCreator().toString());
-//            logger.info(aFinal.getExtendedState().toString());
-//            logger.info(aFinal.getState().toString());
-//            logger.info(aFinal.getNotifier().toString());
-
-
-            //The below should go in a seperate thread for performance
-
-            //logger.info(original.getState().getName());
 
             String blockName = original.getState().getType().getName();
             if(blockName.contains(":")) { //Remove prefix
@@ -106,9 +53,39 @@ public class BlockEventListener {
                 dimensionId = blockLocation.getExtent().getDimension().getType().toString().charAt(0);
             }
 
-            long unixTime = new Date().getTime() / 1000L;
+            long unixTime = new Date().getTime() / 100L; //in 0.1s
             logger.info("should call dbhelper now!");
             dbHelper.logBlockBreak(player.getUniqueId().toString(),blockName,blockX,blockY,blockZ,unixTime,dimensionId);
+        }
+    }
+
+    @Listener
+    public void onBlockPlace (ChangeBlockEvent.Place event, @Root Player player) {
+        List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
+        for(Transaction<BlockSnapshot> t : transactions) {
+
+            BlockSnapshot placedBlock = t.getFinal();
+            logger.info(placedBlock.getLocation().toString());
+            String blockName = placedBlock.getState().getType().getName();
+            if(blockName.contains(":")) { //Remove prefix
+                String[] splitBlockName = blockName.split(":");
+                blockName = splitBlockName[1]; //The part after the prefix
+            }
+
+            int blockX=0; int blockY=0; int blockZ=0; char dimensionId='O'; //Dimension default is "O" for OVERWORLD. I don't know in which absurd case these defaults would ever be used
+            if(!placedBlock.getLocation().isPresent()) {
+                logger.error("Wtf why is there no location for the block that was placed?!");
+            } else {
+                Location<World> blockLocation = placedBlock.getLocation().get();
+                blockX = blockLocation.getBlockX();
+                blockY = blockLocation.getBlockY();
+                blockZ = blockLocation.getBlockZ();
+                dimensionId = blockLocation.getExtent().getDimension().getType().toString().charAt(0);
+            }
+
+            long unixTime = new Date().getTime() / 100L; //in 0.1s
+            logger.info("should call dbhelper now!");
+            dbHelper.logBlockPlace(player.getUniqueId().toString(),blockName,blockX,blockY,blockZ,unixTime,dimensionId);
         }
     }
 }

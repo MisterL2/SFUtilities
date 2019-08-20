@@ -65,7 +65,8 @@ public class SFUtilities {
         activatedCommands.add(new SetHealth(logger,"sethealth","healthset"));
 
         //If logging is enabled
-        activatedCommands.add(new GetBlockBreakLog(dbHelper,logger,"breaklog","blockbreaklog"));
+        activatedCommands.add(new GetBlockBreakLog(dbHelper,logger,"blog","breaklog","blockbreaklog"));
+        activatedCommands.add(new GetBlockPlaceLog(dbHelper,logger,"plog","placelog","blockplacelog"));
 
         //Create, log and register the selected commands
         for (Command command: activatedCommands) {

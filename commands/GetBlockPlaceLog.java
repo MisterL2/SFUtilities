@@ -13,17 +13,17 @@ import org.spongepowered.api.text.Text;
 import java.util.List;
 import java.util.Optional;
 
-public class GetBlockBreakLog extends DBCommand {
+public class GetBlockPlaceLog extends DBCommand {
 
 
-    public GetBlockBreakLog(DBHelper dbHelper, Logger logger, String... aliases) {
+    public GetBlockPlaceLog(DBHelper dbHelper, Logger logger, String... aliases) {
         super(dbHelper, logger, aliases);
     }
 
     @Override
     public CommandSpec build() {
         CommandSpec getBreakLog = CommandSpec.builder()
-                .description(Text.of("Gets the log of all blocks broken at the specified coordinates"))
+                .description(Text.of("Gets the log of all blocks placed at the specified coordinates"))
                 .permission("sfutilities.logging")
                 .arguments(
                         GenericArguments.integer(Text.of("x")),
@@ -50,10 +50,10 @@ public class GetBlockBreakLog extends DBCommand {
                         dimensionId = maybeDimension.get().charAt(0);
                     }
 
-                    List<String> blockBreakLog = dbHelper.getBlockBreakLog(x, y, z, dimensionId);
+                    List<String> blockBreakLog = dbHelper.getBlockPlaceLog(x, y, z, dimensionId);
                     src.sendMessage(Text.of("=============================="));
                     if(blockBreakLog.isEmpty()) {
-                        src.sendMessage(Text.of("There are no break logs for these coordinates in this dimension!"));
+                        src.sendMessage(Text.of("There are no place logs for these coordinates in this dimension!"));
                     } else {
                         for (String logRow: blockBreakLog) {
                             src.sendMessage(Text.of(logRow));
