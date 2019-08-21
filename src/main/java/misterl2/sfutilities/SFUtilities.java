@@ -8,6 +8,7 @@ import misterl2.sfutilities.logging.BlockEventListener;
 import misterl2.sfutilities.database.SQLiteHelper;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
+import ninja.leaping.configurate.ValueType;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
@@ -27,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Plugin(
         id = "sfutilities",
@@ -43,7 +45,7 @@ public class SFUtilities {
     private Logger logger;
 
     @Inject
-    @DefaultConfig(sharedRoot = true)
+    @DefaultConfig  (sharedRoot = true)
     private Path configDir;
 
     private Path configFile = Paths.get( "config/sfutilities.conf");
@@ -60,44 +62,34 @@ public class SFUtilities {
     public void init(GameInitializationEvent event) {
         logger.info("SFUtilities loading...");
         logger.info("Loading config...");
+        ConfigurationNode rootNode = null;
         try {
-            //CommentedConfigurationNode load = configLoader.load();
-            //configLoader.save(load);
-            //CommentedConfigurationNode emptyNode = configLoader.createEmptyNode(ConfigurationOptions.defaults());
-
-            ConfigurationNode rootNode = configLoader.load(); //Creates config correctly
+            rootNode = configLoader.load();
             List<? extends ConfigurationNode> childrenList = rootNode.getChildrenList();
-            ConfigurationNode appendedNode = rootNode.getAppendedNode();
-            logger.info(appendedNode.getString()); //Returns null
-            logger.info("YOLO");
-            for (ConfigurationNode node: childrenList) { //empty list
-                logger.info(node.getString());
-            }
-            ConfigurationNode commands = rootNode.getNode("commands");
-            ConfigurationNode feed = commands.getNode("feed");
-            boolean feedEnabled = feed.getBoolean();
-            System.out.println(feedEnabled);
-            System.out.println(feedEnabled);
-            System.out.println(feedEnabled);
-            feed.setValue(true);
-            ConfigurationNode heal = commands.getNode("heal");
-            heal.setValue(true);
+            if(rootNode.getValueType() == ValueType.NULL) { //Creates config, if it doesn't exist yet
+                logger.info("No config found, creating new config");
+                ConfigurationNode commands = rootNode.getNode("commands");
+                ConfigurationNode feed = commands.getNode("feed");
 
-            ConfigurationNode logging = rootNode.getNode("logging");
-            logging.setValue(true);
-            System.out.println(configLoader.canSave());
-            configLoader.save(rootNode);
+                feed.setValue(true);
+                ConfigurationNode heal = commands.getNode("heal");
+                heal.setValue(true);
+
+                ConfigurationNode logging = rootNode.getNode("logging");
+                logging.setValue(true);
+                System.out.println(configLoader.canSave());
+                configLoader.save(rootNode);
+            }
+
         } catch (IOException e) {
             logger.error(e.getMessage());
             e.printStackTrace();
         }
         logger.info("Finished loading config!");
         DBHelper dbHelper = new SQLiteHelper(logger);
-        buildCommands(dbHelper);
+        buildCommands(dbHelper,rootNode);
         Sponge.getEventManager().registerListeners(this, new BlockEventListener(logger,dbHelper));
         logger.info("SFUtilities loaded!");
-
-        //IF it doesnt exist yet! -> TBD Check if it does
 
         boolean databaseExists = new File("SFUtil/blocklogs.db").exists();
         if(!databaseExists) {
@@ -110,19 +102,30 @@ public class SFUtilities {
 
     }
 
-    private void buildCommands(DBHelper dbHelper) {
+    private void buildCommands(DBHelper dbHelper, ConfigurationNode rootNode) {
+        if(rootNode==null) {
+            logger.warn("Config could not be loaded, using defaults!");
+        }
         ArrayList<Command> activatedCommands = new ArrayList<>();
-        //Select commands based on config
-        activatedCommands.add(new Feed(logger,"feed","restorehunger"));
-        activatedCommands.add(new SetFood(logger,"setfood","foodset"));
 
-        activatedCommands.add(new Heal(logger,"heal","restorehealth"));
-        activatedCommands.add(new SetHealth(logger,"sethealth","healthset"));
+        //Select commands based on config
+
+        if(rootNode == null || rootNode.getNode("commands","feed").getBoolean(true)) {
+            activatedCommands.add(new Feed(logger,"feed","restorehunger"));
+            activatedCommands.add(new SetFood(logger,"setfood","foodset"));
+
+        }
+
+        if(rootNode == null || rootNode.getNode("commands","heal").getBoolean(true)) {
+            activatedCommands.add(new Heal(logger, "heal", "restorehealth"));
+            activatedCommands.add(new SetHealth(logger, "sethealth", "healthset"));
+        }
 
         //If logging is enabled
-        activatedCommands.add(new GetBlockBreakLog(dbHelper,logger,"blog","breaklog","blockbreaklog"));
-        activatedCommands.add(new GetBlockPlaceLog(dbHelper,logger,"plog","placelog","blockplacelog"));
-
+        if(rootNode == null || rootNode.getNode("logging").getBoolean(true)) {
+            activatedCommands.add(new GetBlockBreakLog(dbHelper, logger, "blog", "breaklog", "blockbreaklog"));
+            activatedCommands.add(new GetBlockPlaceLog(dbHelper, logger, "plog", "placelog", "blockplacelog"));
+        }
         //Create, log and register the selected commands
         for (Command command: activatedCommands) {
             logger.info("Command " + command.getClass().getSimpleName() + " is now being loaded!");
