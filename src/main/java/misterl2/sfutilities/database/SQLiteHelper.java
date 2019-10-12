@@ -41,7 +41,26 @@ public class SQLiteHelper implements DBHelper {
 
     @Override
     public void logChestInteraction(String playerUUID, char action, String block, int amount, int x, int y, int z, long unixTime, char dimensionId) {
+        try (Connection conn = cpds.getConnection()){
+            PreparedStatement pstmt = conn.prepareStatement("INSERT INTO chest VALUES (?,?,?,?,?,?,?,?,?)");
+            pstmt.setString(1,playerUUID);
+            pstmt.setString(2,String.valueOf(action));
+            pstmt.setString(3,block);
+            pstmt.setInt(4,amount);
+            pstmt.setInt(5,x);
+            pstmt.setInt(6,y);
+            pstmt.setInt(7,z);
+            pstmt.setLong(8,unixTime);
+            pstmt.setString(9,String.valueOf(dimensionId));
 
+            logger.info(pstmt.toString());
+            pstmt.execute();
+            //Database is in auto-commit mode, so no need to commit
+
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void logBlockChange(String tableName, String playerUUID, String block, int x, int y, int z, long unixTime, char dimensionId) {
