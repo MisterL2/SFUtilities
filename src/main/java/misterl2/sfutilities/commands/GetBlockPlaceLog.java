@@ -9,6 +9,8 @@ import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.world.Locatable;
+import org.spongepowered.api.world.World;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,7 @@ public class GetBlockPlaceLog extends DBCommand {
                         GenericArguments.integer(Text.of("x")),
                         GenericArguments.integer(Text.of("y")),
                         GenericArguments.integer(Text.of("z")),
+                        GenericArguments.optional(GenericArguments.world(Text.of("world"))),
                         GenericArguments.optional(GenericArguments.string(Text.of("dimension")))
                 )
                 .executor((CommandSource src, CommandContext args) -> {
@@ -37,25 +40,18 @@ public class GetBlockPlaceLog extends DBCommand {
                     int y = (int) args.getOne("y").get();
                     int z = (int) args.getOne("z").get();
 
-                    char dimensionId;
-                    Optional<String> maybeDimension = args.getOne("dimension");
-                    if(!maybeDimension.isPresent()) {
-                        if(src instanceof Player) { //If src is a player, substitute in their current dimension, otherwise assume 'O' for OVERWORLD
-                            dimensionId = ((Player) src).getLocation().getExtent().getDimension().getType().toString().charAt(0);
-                        } else {
-                            dimensionId = 'O';
-                        }
-
-                    } else {
-                        dimensionId = maybeDimension.get().charAt(0);
+                    Optional<World> maybeWorld = getWorld(src, args);
+                    if(!maybeWorld.isPresent()) {
+                        logger.error("World must be specified for this command if the player executing it is not ingame!");
+                        return CommandResult.empty();
                     }
-
-                    List<String> blockBreakLog = dbHelper.getBlockPlaceLog(x, y, z, dimensionId);
+                    World world = maybeWorld.get();
+                    List<String> blockPlaceLog = dbHelper.getBlockPlaceLog(x, y, z, world.getUniqueId(), getDimensionId(src, args));
                     src.sendMessage(Text.of("=============================="));
-                    if(blockBreakLog.isEmpty()) {
+                    if(blockPlaceLog.isEmpty()) {
                         src.sendMessage(Text.of("There are no place logs for these coordinates in this dimension!"));
                     } else {
-                        for (String logRow: blockBreakLog) {
+                        for (String logRow: blockPlaceLog) {
                             src.sendMessage(Text.of(logRow));
                         }
                     }

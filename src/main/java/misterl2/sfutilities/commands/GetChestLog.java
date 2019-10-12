@@ -1,14 +1,24 @@
 package misterl2.sfutilities.commands;
 
 import misterl2.sfutilities.database.DBHelper;
+import misterl2.sfutilities.util.TimeConverter;
 import org.slf4j.Logger;
+import org.spongepowered.api.Server;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.block.BlockState;
+import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
+import org.spongepowered.api.item.inventory.MultiBlockCarrier;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.world.Locatable;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class GetChestLog extends DBCommand {
 
@@ -25,23 +35,35 @@ public class GetChestLog extends DBCommand {
                         GenericArguments.integer(Text.of("x")),
                         GenericArguments.integer(Text.of("y")),
                         GenericArguments.integer(Text.of("z")),
+                        GenericArguments.optional(GenericArguments.world(Text.of("world"))),
                         GenericArguments.optional(GenericArguments.string(Text.of("dimension")))
                 )
                 .executor((CommandSource src, CommandContext args) -> {
                     int x = (int) args.getOne("x").get();
                     int y = (int) args.getOne("y").get();
                     int z = (int) args.getOne("z").get();
-                    char dimensionId = 'O';
-                    Optional<String> maybeDimension = args.getOne("dimension");
-                    if (maybeDimension.isPresent()) {
-                        dimensionId = maybeDimension.get().charAt(0);
+
+                    Optional<World> maybeWorld = getWorld(src, args);
+                    if(!maybeWorld.isPresent()) {
+                        logger.error("World must be specified for this command if the player executing it is not ingame!");
+                        return CommandResult.empty();
                     }
-                    /* TBD
+                    World world = maybeWorld.get();
 
+                    BlockState block = world.getBlock(x, y, z);
+                    Map<String,Long> chestLog = new HashMap<>();
+                    if(block instanceof MultiBlockCarrier) {
+                        List<Location<World>> locations = ((MultiBlockCarrier) block).getLocations();
+                        for(Location<World> location : locations) {
+                            chestLog.putAll(dbHelper.getChestLog(location.getBlockX(), location.getBlockY(), location.getBlockZ(), world.getUniqueId(), getDimensionId(src, args)));
+                        }
+                    } else {
+                        chestLog = dbHelper.getChestLog(x, y, z, world.getUniqueId(), getDimensionId(src, args));
+                    }
 
-
-                    */
-                    return null;
+                    String chestLogString = chestLog.entrySet().stream().sorted(Comparator.comparingLong(Map.Entry::getValue)).limit(dbHelper.getLogLimit()).map(e -> (e.getKey() + TimeConverter.secondsToTimeString(e.getValue()))).collect(Collectors.joining("\n"));
+                    src.sendMessage(Text.of(chestLogString));
+                    return CommandResult.success();
                 })
                 .build();
         return getChestLog;

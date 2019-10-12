@@ -55,33 +55,29 @@ public class BlockEventListener {
         List<Transaction<BlockSnapshot>> transactions = event.getTransactions();
         for (Transaction<BlockSnapshot> t : transactions) {
 
-            BlockSnapshot original = t.getOriginal();
+            BlockSnapshot brokenBlock = t.getOriginal();
 //            logger.info(original.getLocation().toString());
 //            logger.info("Location");
 
 
-            String blockName = original.getState().getType().getName();
+            String blockName = brokenBlock.getState().getType().getName();
             if (blockName.contains(":")) { //Remove prefix
                 String[] splitBlockName = blockName.split(":");
                 blockName = splitBlockName[1]; //The part after the prefix
             }
 
-            int blockX = 0;
-            int blockY = 0;
-            int blockZ = 0;
-            char dimensionId = 'O'; //Dimension default is "O" for OVERWORLD. I don't know in which absurd case these defaults would ever be used
-            if (!original.getLocation().isPresent()) {
-                logger.error("Wtf why is there no location for the block that broke?!");
-            } else {
-                Location<World> blockLocation = original.getLocation().get();
-                blockX = blockLocation.getBlockX();
-                blockY = blockLocation.getBlockY();
-                blockZ = blockLocation.getBlockZ();
-                dimensionId = getDimensionChar(blockLocation);
+            if (!brokenBlock.getLocation().isPresent()) {
+                logger.error("Wtf why is there no location for the block that was placed?!");
+                return;
             }
 
+            Location<World> blockLocation = brokenBlock.getLocation().get();
+            int blockX = blockLocation.getBlockX();
+            int blockY = blockLocation.getBlockY();
+            int blockZ = blockLocation.getBlockZ();
+
 //            logger.info("should call dbhelper now!");
-            dbHelper.logBlockBreak(player.getUniqueId().toString(), blockName, blockX, blockY, blockZ, TimeConverter.getUnixTime(), dimensionId);
+            dbHelper.logBlockBreak(player.getUniqueId().toString(), blockName, blockX, blockY, blockZ, TimeConverter.getUnixTime(), blockLocation.getExtent().getUniqueId(), getDimensionChar(blockLocation));
         }
     }
 
@@ -98,23 +94,18 @@ public class BlockEventListener {
                 blockName = splitBlockName[1]; //The part after the prefix
             }
 
-            int blockX = 0;
-            int blockY = 0;
-            int blockZ = 0;
-            char dimensionId = 'O'; //Dimension default is "O" for OVERWORLD. I don't know in which absurd case these defaults would ever be used
             if (!placedBlock.getLocation().isPresent()) {
                 logger.error("Wtf why is there no location for the block that was placed?!");
-            } else {
-                Location<World> blockLocation = placedBlock.getLocation().get();
-                blockX = blockLocation.getBlockX();
-                blockY = blockLocation.getBlockY();
-                blockZ = blockLocation.getBlockZ();
-                dimensionId = getDimensionChar(blockLocation);
+                return;
             }
 
+            Location<World> blockLocation = placedBlock.getLocation().get();
+            int blockX = blockLocation.getBlockX();
+            int blockY = blockLocation.getBlockY();
+            int blockZ = blockLocation.getBlockZ();
 
 //            logger.info("should call dbhelper now!");
-            dbHelper.logBlockPlace(player.getUniqueId().toString(), blockName, blockX, blockY, blockZ, TimeConverter.getUnixTime(), dimensionId);
+            dbHelper.logBlockPlace(player.getUniqueId().toString(), blockName, blockX, blockY, blockZ, TimeConverter.getUnixTime(), blockLocation.getExtent().getUniqueId(), getDimensionChar(blockLocation));
         }
     }
 
@@ -155,7 +146,7 @@ public class BlockEventListener {
         List<SlotTransaction> validTransactions = transactions.stream().filter(filter).collect(Collectors.toList());
 
         Location<World> chestLocation = carrier.getLocation();
-
+        chestLocation.getExtent().getUniqueId()
 
 
         for(SlotTransaction validTransaction : validTransactions) {
@@ -173,7 +164,7 @@ public class BlockEventListener {
                 action = 'R';
                 blockName = validTransaction.getFinal().getType().getName();
             }
-            dbHelper.logChestInteraction(player.getUniqueId().toString(),action, blockName, quantityChange, chestLocation.getBlockX(), chestLocation.getBlockY(), chestLocation.getBlockZ(), TimeConverter.getUnixTime(), getDimensionChar(chestLocation));
+            dbHelper.logChestInteraction(player.getUniqueId().toString(),action, blockName, quantityChange, chestLocation.getBlockX(), chestLocation.getBlockY(), chestLocation.getBlockZ(), TimeConverter.getUnixTime(), chestLocation.getExtent().getUniqueId(), getDimensionChar(chestLocation));
         }
 
     }
@@ -211,113 +202,4 @@ public class BlockEventListener {
     }
 
 
-
 }
-
-//        if(carrier instanceof MultiBlockCarrier) {
-//            MultiBlockCarrier c = (MultiBlockCarrier) carrier;
-//            List<Location<World>> locations = c.getLocations();
-//            for (Location<World> location: locations) {
-//                System.out.println(location.getBlockX());
-//                System.out.println(location.getBlockY());
-//                System.out.println(location.getBlockZ());
-//                System.out.println("xxxxxxxxxxxxxxxx");
-//                BlockState block = location.getBlock();
-//                System.out.println(block);
-//                System.out.println(block.getType().getName());
-//
-////                if (block instanceof Chest) {
-////                    System.out.println("IT's a chest boy!");
-////                }
-//                if (block instanceof CarriedInventory) {
-//                    System.out.println("Carried inventory");
-//                    CarriedInventory carriedBlock = (CarriedInventory) block;
-//                    System.out.println(carriedBlock.getName().get());
-//                    System.out.println(carriedBlock.getCarrier().get().toString());
-//                    Object curry = carriedBlock.getCarrier().get();
-//                    if (curry instanceof Chest) {
-//                        Chest chestCurry = (Chest) curry;
-//                        System.out.println(".....................ddddddddddddd");
-//                        System.out.println(chestCurry.getInventory());
-//                        System.out.println(chestCurry.getDoubleChestInventory());
-//
-//                    } else {
-//                        System.out.println("Not a chest WTF");
-//                    }
-//                }
-//                Optional<Inventory> inventory = c.getInventory(location);
-//                if(inventory.isPresent()) {
-//                    Inventory inventory1 = inventory.get();
-//                    System.out.println(inventory1);
-//                } else {
-//                    System.out.println("Not present 23124892!");
-//                }
-//            }
-//
-//        } else {
-//            System.out.println("NOT A MultiBlockCarrier");
-//        }
-//        System.out.println(carrier);
-//        System.out.println(carrier.hashCode());
-//        System.out.println(carrier.getClass());
-//        Location<World> location = carrier.getLocation();
-//        int blockX = location.getBlockX();
-//        int blockY = location.getBlockY();
-//        int blockZ = location.getBlockZ();
-//        System.out.println(blockX);
-//        System.out.println(blockY);
-//        System.out.println(blockZ);
-//        System.out.println(player.getName());
-//        System.out.println("######------#######");
-////        System.out.println(player.getInventory());
-//        System.out.println(player.getInventory().root());
-////        System.out.println(carrier.getInventory());
-//        System.out.println(carrier.getInventory().root());
-//        System.out.println("----d--------d-");
-//        for (SlotTransaction transaction: transactions) {
-//            System.out.println(transaction.getSlot().parent());
-//            Inventory parent1 = transaction.getSlot().parent();
-//            System.out.println(parent1.hasChildren());
-//            System.out.println(parent1.capacity());
-//            ItemStackSnapshot original = transaction.getOriginal();
-//            System.out.println("Original: " + original.getQuantity() + " : " + original.getType());
-//            ItemStackSnapshot aFinal = transaction.getFinal();
-//            System.out.println("Final: " + aFinal.getQuantity() + " : " + aFinal.getType());
-//
-//        }
-//        System.out.println(event.getClass().toString());
-//        System.out.println("-------------------");
-//
-//    }
-//
-//}
-//        Transaction<ItemStackSnapshot> cursorTransaction = event.getCursorTransaction();
-//        Container targetInventory = event.getTargetInventory();
-//        System.out.println("Container:");
-//        System.out.println(targetInventory.getName().get());
-//
-//        int i = targetInventory.totalItems();
-//        System.out.println("Total items in the container: " + i);
-//
-//        Map<EventContextKey<?>, Object> eventContextKeyObjectMap = event.getContext().asMap();
-//        System.out.println("----------------------");
-//        for (EventContextKey key: eventContextKeyObjectMap.keySet()) {
-//            System.out.println("Key");
-//            System.out.println(key.getAllowedType());
-//            System.out.println(key.getName());
-//            System.out.println("Value");
-//            System.out.println(eventContextKeyObjectMap.get(key));
-//        }
-//        System.out.println("-----------------------------------------------");
-//        ItemStackSnapshot original = cursorTransaction.getOriginal();
-//        System.out.println("Original");
-//        int quantity = original.getQuantity();
-//        System.out.println(quantity);
-//        ItemType type = original.getType();
-//        System.out.println(type);
-//        System.out.println("Afterwards");
-//        ItemStackSnapshot aFinal = cursorTransaction.getFinal();
-//        int quantity1 = aFinal.getQuantity();
-//        System.out.println(quantity1);
-//        ItemType type1 = aFinal.getType();
-//        System.out.println(type1);

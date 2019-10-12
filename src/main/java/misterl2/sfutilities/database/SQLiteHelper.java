@@ -11,36 +11,31 @@ import java.sql.*;
 import java.util.*;
 import java.util.Date;
 
-public class SQLiteHelper implements DBHelper {
-    private Logger logger;
-    private ComboPooledDataSource cpds;
+public class SQLiteHelper extends DBHelper {
 
-    public SQLiteHelper(Logger logger) {
-        this.logger=logger;
-        cpds = new ComboPooledDataSource();
-
+    public SQLiteHelper(Logger logger, int logLimit) {
+        super(logger, logLimit);
         cpds.setJdbcUrl("jdbc:sqlite:SFUtil/blocklogs.db");
-
     }
 
     //The dimensionId is the first character of the dimension, so O for OVERWORLD. This saves storage space.
     //changeType refers to the event action, so for Block.BREAK it would be "BREAK", for Block.PLACE it would be "PLACE", etc
     @Override
-    public void logBlockBreak(String playerUUID, String block, int x, int y, int z, long unixTime, char dimensionId) {
+    public void logBlockBreak(String playerUUID, String block, int x, int y, int z, long unixTime, UUID world, char dimension) {
         logger.info("Logging block!");
-        logger.info("BREAK" + " " + playerUUID + " " + block + " " + x + " " + y + " "  + z + " " + unixTime + " " + dimensionId);
-        logBlockChange("BREAK",playerUUID,block,x,y,z,unixTime,dimensionId);
+        logger.info("BREAK" + " " + playerUUID + " " + block + " " + x + " " + y + " "  + z + " " + unixTime + " " + dimension);
+        logBlockChange("BREAK",playerUUID,block,x,y,z,unixTime, world, dimension);
     }
 
     @Override
-    public void logBlockPlace(String playerUUID, String block, int x, int y, int z, long unixTime, char dimensionId) {
+    public void logBlockPlace(String playerUUID, String block, int x, int y, int z, long unixTime, UUID world, char dimension) {
         logger.info("Logging block!");
-        logger.info("BREAK" + " " + playerUUID + " " + block + " " + x + " " + y + " "  + z + " " + unixTime + " " + dimensionId);
-        logBlockChange("PLACE",playerUUID,block,x,y,z,unixTime,dimensionId);
+        logger.info("BREAK" + " " + playerUUID + " " + block + " " + x + " " + y + " "  + z + " " + unixTime + " " + dimension);
+        logBlockChange("PLACE",playerUUID,block,x,y,z,unixTime, world, dimension);
     }
 
     @Override
-    public void logChestInteraction(String playerUUID, char action, String block, int amount, int x, int y, int z, long unixTime, char dimensionId) {
+    public void logChestInteraction(String playerUUID, char action, String block, int amount, int x, int y, int z, long unixTime, UUID world, char dimension) {
         try (Connection conn = cpds.getConnection()){
             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO chest VALUES (?,?,?,?,?,?,?,?,?)");
             pstmt.setString(1,playerUUID);
@@ -51,7 +46,7 @@ public class SQLiteHelper implements DBHelper {
             pstmt.setInt(6,y);
             pstmt.setInt(7,z);
             pstmt.setLong(8,unixTime);
-            pstmt.setString(9,String.valueOf(dimensionId));
+            pstmt.setString(9,String.valueOf(dimension));
 
             logger.info(pstmt.toString());
             pstmt.execute();
@@ -63,7 +58,7 @@ public class SQLiteHelper implements DBHelper {
         }
     }
 
-    private void logBlockChange(String tableName, String playerUUID, String block, int x, int y, int z, long unixTime, char dimensionId) {
+    private void logBlockChange(String tableName, String playerUUID, String block, int x, int y, int z, long unixTime, UUID world, char dimension) {
         try (Connection conn = cpds.getConnection()){
             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO " + tableName + " VALUES (?,?,?,?,?,?,?)");
             pstmt.setString(1,playerUUID);
@@ -72,7 +67,7 @@ public class SQLiteHelper implements DBHelper {
             pstmt.setInt(4,y);
             pstmt.setInt(5,z);
             pstmt.setLong(6,unixTime);
-            pstmt.setString(7,String.valueOf(dimensionId));
+            pstmt.setString(7,String.valueOf(dimension));
             logger.info(pstmt.toString());
             pstmt.execute();
             //Database is in auto-commit mode, so no need to commit
@@ -83,22 +78,21 @@ public class SQLiteHelper implements DBHelper {
         }
     }
 
-
     @Override
-    public List<String> getBlockBreakLog(int x, int y, int z, char dimension) {
-        return getBlockChangedLog("break",x,y,z,dimension);
+    public List<String> getBlockBreakLog(int x, int y, int z, UUID world, char dimension) {
+        return getBlockChangedLog("break",x,y,z, world, dimension);
     }
 
     @Override
-    public List<String> getBlockPlaceLog(int x, int y, int z, char dimension) {
-        return getBlockChangedLog("place",x,y,z,dimension);
+    public List<String> getBlockPlaceLog(int x, int y, int z, UUID world, char dimension) {
+        return getBlockChangedLog("place",x,y,z, world, dimension);
     }
 
     @Override
-    public List<String> getChestLog(int x, int y, int z, char dimension) {
-        List<String> logs = new ArrayList<>();
+    public Map<String,Long> getChestLog(int x, int y, int z, UUID world, char dimension) {
+        Map<String,Long> logs = new HashMap<>();
         try (Connection conn = cpds.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT player, action, block, amount, unixtime FROM chest WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT 20");
+            PreparedStatement pstmt = conn.prepareStatement("SELECT player, action, block, amount, unixtime FROM chest WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT " + logLimit);
             pstmt.setInt(1,x);
             pstmt.setInt(2,y);
             pstmt.setInt(3,z);
@@ -119,7 +113,6 @@ public class SQLiteHelper implements DBHelper {
                     logger.warn("The timestamp of the blocklog is in the future!");
                     continue;
                 }
-                String timeSinceString = TimeConverter.secondsToTimeString(timeSince);
 
                 UserStorageService uss = Sponge.getServiceManager().provideUnchecked(UserStorageService.class);
                 Optional<User> maybePlayer = uss.get(UUID.fromString(playerUUID));
@@ -134,23 +127,21 @@ public class SQLiteHelper implements DBHelper {
                         .append(action).append(" \"")
                         .append(block).append("\" x")
                         .append(amount).append(" ")
-                        .append(timeSinceString).append(" ago")
                         .toString();
-                logs.add(logRow);
+                logs.put(logRow, timeSince);
             }
         } catch (SQLException e) {
             logger.error(e.getMessage());
             e.printStackTrace();
         }
-        Collections.reverse(logs); //So that the newest ones are furthest down
-        return logs;
+        return logs; //Unsorted! But contains the timeSince for sorting
     }
 
 
-    private List<String> getBlockChangedLog(String tableName, int x, int y, int z, char dimension) {
+    private List<String> getBlockChangedLog(String tableName, int x, int y, int z, UUID world, char dimension) {
         List<String> logs = new ArrayList<>();
         try (Connection conn = cpds.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT player, block, unixtime FROM " + tableName + " WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT 20");
+            PreparedStatement pstmt = conn.prepareStatement("SELECT player, block, unixtime FROM " + tableName + " WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT " + logLimit);
             pstmt.setInt(1,x);
             pstmt.setInt(2,y);
             pstmt.setInt(3,z);

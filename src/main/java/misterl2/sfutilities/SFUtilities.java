@@ -52,8 +52,6 @@ public class SFUtilities {
     private ConfigurationLoader<CommentedConfigurationNode> configLoader = HoconConfigurationLoader.builder().setPath(configFile).build();
 
 
-
-
     @Listener
     public void onServerStart(GameStartedServerEvent event) {
     }
@@ -77,6 +75,10 @@ public class SFUtilities {
 
                 ConfigurationNode logging = rootNode.getNode("logging");
                 logging.setValue(true);
+
+                ConfigurationNode logLimit = logging.getNode("max-logs-shown");
+                logLimit.setValue(20);
+
                 System.out.println(configLoader.canSave());
                 configLoader.save(rootNode);
             }
@@ -86,7 +88,8 @@ public class SFUtilities {
             e.printStackTrace();
         }
         logger.info("Finished loading config!");
-        DBHelper dbHelper = new SQLiteHelper(logger);
+        Integer logLimit = (Integer) rootNode.getNode("logging", "max-logs-shown").getValue();
+        DBHelper dbHelper = new SQLiteHelper(logger,logLimit);
         buildCommands(dbHelper,rootNode);
         Sponge.getEventManager().registerListeners(this, new BlockEventListener(logger,dbHelper));
         logger.info("SFUtilities loaded!");
