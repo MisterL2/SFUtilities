@@ -1,6 +1,7 @@
 package misterl2.sfutilities.logging;
 
 import misterl2.sfutilities.database.DBHelper;
+import misterl2.sfutilities.util.TimeConverter;
 import org.slf4j.Logger;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockState;
@@ -80,7 +81,7 @@ public class BlockEventListener {
             }
 
 //            logger.info("should call dbhelper now!");
-            dbHelper.logBlockBreak(player.getUniqueId().toString(), blockName, blockX, blockY, blockZ, getUnixTime(), dimensionId);
+            dbHelper.logBlockBreak(player.getUniqueId().toString(), blockName, blockX, blockY, blockZ, TimeConverter.getUnixTime(), dimensionId);
         }
     }
 
@@ -113,7 +114,7 @@ public class BlockEventListener {
 
 
 //            logger.info("should call dbhelper now!");
-            dbHelper.logBlockPlace(player.getUniqueId().toString(), blockName, blockX, blockY, blockZ, getUnixTime(), dimensionId);
+            dbHelper.logBlockPlace(player.getUniqueId().toString(), blockName, blockX, blockY, blockZ, TimeConverter.getUnixTime(), dimensionId);
         }
     }
 
@@ -172,14 +173,12 @@ public class BlockEventListener {
                 action = 'R';
                 blockName = validTransaction.getFinal().getType().getName();
             }
-            dbHelper.logChestInteraction(player.getUniqueId().toString(),action, blockName, quantityChange, chestLocation.getBlockX(), chestLocation.getBlockY(), chestLocation.getBlockZ(), getUnixTime(), getDimensionChar(chestLocation));
+            dbHelper.logChestInteraction(player.getUniqueId().toString(),action, blockName, quantityChange, chestLocation.getBlockX(), chestLocation.getBlockY(), chestLocation.getBlockZ(), TimeConverter.getUnixTime(), getDimensionChar(chestLocation));
         }
 
     }
 
-    private long getUnixTime() {
-        return new Date().getTime() / 100L; //in 0.1s
-    }
+
 
     private char getDimensionChar(Location<World> location) {
         return location.getExtent().getDimension().getType().toString().charAt(0);

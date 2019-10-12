@@ -1,5 +1,7 @@
 package misterl2.sfutilities.util;
 
+import java.util.Date;
+
 public class TimeConverter {
 
     public static String secondsToTimeString(long timeInDeciSeconds) { //The time is actually in 0.1s to provide compromise between accuracy and storage space
@@ -37,5 +39,9 @@ public class TimeConverter {
         }
 
         return relativeTime;
+    }
+
+    public static long getUnixTime() {
+        return new Date().getTime() / 100L; //in 0.1s
     }
 }

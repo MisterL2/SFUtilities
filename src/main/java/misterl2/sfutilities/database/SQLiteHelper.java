@@ -96,8 +96,56 @@ public class SQLiteHelper implements DBHelper {
 
     @Override
     public List<String> getChestLog(int x, int y, int z, char dimension) {
-        return null;
+        List<String> logs = new ArrayList<>();
+        try (Connection conn = cpds.getConnection()) {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT player, action, block, amount, unixtime FROM chest WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT 20");
+            pstmt.setInt(1,x);
+            pstmt.setInt(2,y);
+            pstmt.setInt(3,z);
+            pstmt.setString(4,String.valueOf(dimension));
+            ResultSet resultSet = pstmt.executeQuery();
+
+            long currentUnixtime = TimeConverter.getUnixTime();
+
+            while(resultSet.next()) {
+                String playerUUID = resultSet.getString("player");
+                String action = resultSet.getString("action");
+                String block = resultSet.getString("block");
+                String amount = resultSet.getString("amount");
+                long unixtime = resultSet.getLong("unixtime");
+
+                long timeSince = currentUnixtime - unixtime; //In seconds
+                if(timeSince<0) {
+                    logger.warn("The timestamp of the blocklog is in the future!");
+                    continue;
+                }
+                String timeSinceString = TimeConverter.secondsToTimeString(timeSince);
+
+                UserStorageService uss = Sponge.getServiceManager().provideUnchecked(UserStorageService.class);
+                Optional<User> maybePlayer = uss.get(UUID.fromString(playerUUID));
+                String playerName = playerUUID; //Fallback to UUID if name cannot be resolved
+                if(!maybePlayer.isPresent()) {
+                    logger.warn("The player with UUID " + playerUUID + " cannot be found in playercache, but appears in the blocklogs! Using an outdated database?");
+                } else {
+                    playerName = maybePlayer.get().getName();
+                }
+                String logRow = new StringBuilder()
+                        .append(playerName).append(" ")
+                        .append(action).append(" \"")
+                        .append(block).append("\" x")
+                        .append(amount).append(" ")
+                        .append(timeSinceString).append(" ago")
+                        .toString();
+                logs.add(logRow);
+            }
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
+            e.printStackTrace();
+        }
+        Collections.reverse(logs); //So that the newest ones are furthest down
+        return logs;
     }
+
 
     private List<String> getBlockChangedLog(String tableName, int x, int y, int z, char dimension) {
         List<String> logs = new ArrayList<>();
