@@ -146,8 +146,6 @@ public class BlockEventListener {
         List<SlotTransaction> validTransactions = transactions.stream().filter(filter).collect(Collectors.toList());
 
         Location<World> chestLocation = carrier.getLocation();
-        chestLocation.getExtent().getUniqueId()
-
 
         for(SlotTransaction validTransaction : validTransactions) {
             if(carrier instanceof  MultiBlockCarrier) { //If it is a doublechest, overwrite the chestLocation value with the value of the specific sub-chest being targeted
