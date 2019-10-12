@@ -40,8 +40,8 @@ public class SQLiteHelper implements DBHelper {
     }
 
     @Override
-    public void logChestInteraction(String playerUUID, String action, String block, int amount, int x, int y, int z, long unixTime, char dimensionId) {
-        
+    public void logChestInteraction(String playerUUID, char action, String block, int amount, int x, int y, int z, long unixTime, char dimensionId) {
+
     }
 
     private void logBlockChange(String tableName, String playerUUID, String block, int x, int y, int z, long unixTime, char dimensionId) {
@@ -146,7 +146,7 @@ public class SQLiteHelper implements DBHelper {
                         "dimension CHAR(1) NOT NULL\n" +
                         ");";
                 String createPlace =  "CREATE TABLE place (\n" +
-                "player TEXT NOT NULL,\n" +
+                        "player TEXT NOT NULL,\n" +
                         "block TEXT NOT NULL,\n" +
                         "x INT NOT NULL,\n" +
                         "y INT NOT NULL,\n" +
@@ -156,6 +156,7 @@ public class SQLiteHelper implements DBHelper {
                         ");";
                 String createChest =  "CREATE TABLE chest (\n" +
                         "player TEXT NOT NULL,\n" +
+                        "action CHAR(1) NOT NULL,\n" +
                         "item TEXT NOT NULL,\n" +
                         "amount INT NOT NULL,\n" +
                         "x INT NOT NULL,\n" +
@@ -166,6 +167,7 @@ public class SQLiteHelper implements DBHelper {
                         ");";
                 statement.execute(createBreak);
                 statement.execute(createPlace);
+                statement.execute(createChest);
                 statement.close();
 //                DatabaseMetaData meta = conn.getMetaData();
             }

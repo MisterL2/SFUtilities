@@ -161,7 +161,7 @@ public class BlockEventListener {
             if(carrier instanceof  MultiBlockCarrier) { //If it is a doublechest, overwrite the chestLocation value with the value of the specific sub-chest being targeted
                 chestLocation = getMultiBlockCarrierLocation((MultiBlockCarrier) carrier, getIndex(validTransaction), capacity);
             }
-            String action = "Insert";
+            char action = 'I'; // I = Insert, R = Remove
             String blockName = validTransaction.getOriginal().getType().getName();
             System.out.println(blockName);
             System.out.println("??");
@@ -169,7 +169,7 @@ public class BlockEventListener {
             System.out.println(validTransaction.getOriginal().getQuantity());
             int quantityChange = validTransaction.getFinal().getQuantity() - validTransaction.getOriginal().getQuantity();
             if(quantityChange < 0) { //Itemstack quantity is lower after the transaction than it was before.
-                action = "Remove";
+                action = 'R';
                 blockName = validTransaction.getFinal().getType().getName();
             }
             dbHelper.logChestInteraction(player.getUniqueId().toString(),action, blockName, quantityChange, chestLocation.getBlockX(), chestLocation.getBlockY(), chestLocation.getBlockZ(), getUnixTime(), getDimensionChar(chestLocation));

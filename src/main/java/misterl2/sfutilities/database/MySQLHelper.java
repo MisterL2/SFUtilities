@@ -19,7 +19,7 @@ public class MySQLHelper implements DBHelper {
     }
 
     @Override
-    public void logChestInteraction(String playerUUID, String action, String block, int amount, int x, int y, int z, long unixTime, char dimensionId) {
+    public void logChestInteraction(String playerUUID, char action, String block, int amount, int x, int y, int z, long unixTime, char dimensionId) {
 
     }
 
