@@ -37,7 +37,7 @@ public class SQLiteHelper extends DBHelper {
     @Override
     public void logChestInteraction(String playerUUID, char action, String block, int amount, int x, int y, int z, long unixTime, UUID world, char dimension) {
         try (Connection conn = cpds.getConnection()){
-            PreparedStatement pstmt = conn.prepareStatement("INSERT INTO chest VALUES (?,?,?,?,?,?,?,?,?)");
+            PreparedStatement pstmt = conn.prepareStatement("INSERT INTO chest VALUES (?,?,?,?,?,?,?,?,?,?)");
             pstmt.setString(1,playerUUID);
             pstmt.setString(2,String.valueOf(action));
             pstmt.setString(3,block);
@@ -46,9 +46,9 @@ public class SQLiteHelper extends DBHelper {
             pstmt.setInt(6,y);
             pstmt.setInt(7,z);
             pstmt.setLong(8,unixTime);
-            pstmt.setString(9,String.valueOf(dimension));
+            pstmt.setString(9,world.toString());
+            pstmt.setString(10,String.valueOf(dimension));
 
-            logger.info(pstmt.toString());
             pstmt.execute();
             //Database is in auto-commit mode, so no need to commit
 
@@ -60,15 +60,15 @@ public class SQLiteHelper extends DBHelper {
 
     private void logBlockChange(String tableName, String playerUUID, String block, int x, int y, int z, long unixTime, UUID world, char dimension) {
         try (Connection conn = cpds.getConnection()){
-            PreparedStatement pstmt = conn.prepareStatement("INSERT INTO " + tableName + " VALUES (?,?,?,?,?,?,?)");
+            PreparedStatement pstmt = conn.prepareStatement("INSERT INTO " + tableName + " VALUES (?,?,?,?,?,?,?,?)");
             pstmt.setString(1,playerUUID);
             pstmt.setString(2,block);
             pstmt.setInt(3,x);
             pstmt.setInt(4,y);
             pstmt.setInt(5,z);
             pstmt.setLong(6,unixTime);
-            pstmt.setString(7,String.valueOf(dimension));
-            logger.info(pstmt.toString());
+            pstmt.setString(7,world.toString());
+            pstmt.setString(8,String.valueOf(dimension));
             pstmt.execute();
             //Database is in auto-commit mode, so no need to commit
 
@@ -92,11 +92,12 @@ public class SQLiteHelper extends DBHelper {
     public Map<String,Long> getChestLog(int x, int y, int z, UUID world, char dimension) {
         Map<String,Long> logs = new HashMap<>();
         try (Connection conn = cpds.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT player, action, block, amount, unixtime FROM chest WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT " + logLimit);
+            PreparedStatement pstmt = conn.prepareStatement("SELECT player, action, item, amount, unixtime FROM chest WHERE x=? and y=? and z=? and world=? and dimension=? ORDER BY unixtime DESC LIMIT " + logLimit);
             pstmt.setInt(1,x);
             pstmt.setInt(2,y);
             pstmt.setInt(3,z);
-            pstmt.setString(4,String.valueOf(dimension));
+            pstmt.setString(4,world.toString());
+            pstmt.setString(5,String.valueOf(dimension));
             ResultSet resultSet = pstmt.executeQuery();
 
             long currentUnixtime = TimeConverter.getUnixTime();
@@ -104,7 +105,14 @@ public class SQLiteHelper extends DBHelper {
             while(resultSet.next()) {
                 String playerUUID = resultSet.getString("player");
                 String action = resultSet.getString("action");
-                String block = resultSet.getString("block");
+                if(action.equals("I")) {
+                    action = "inserted";
+                } else if(action.equals("R")) {
+                    action = "removed";
+                } else {
+                    logger.error("Unsupported action found in database!");
+                }
+                String block = resultSet.getString("item");
                 String amount = resultSet.getString("amount");
                 long unixtime = resultSet.getLong("unixtime");
 
@@ -124,8 +132,8 @@ public class SQLiteHelper extends DBHelper {
                 }
                 String logRow = new StringBuilder()
                         .append(playerName).append(" ")
-                        .append(action).append(" \"")
-                        .append(block).append("\" x")
+                        .append(action)
+                        .append(block).append("x")
                         .append(amount).append(" ")
                         .toString();
                 logs.put(logRow, timeSince);
@@ -141,11 +149,12 @@ public class SQLiteHelper extends DBHelper {
     private List<String> getBlockChangedLog(String tableName, int x, int y, int z, UUID world, char dimension) {
         List<String> logs = new ArrayList<>();
         try (Connection conn = cpds.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT player, block, unixtime FROM " + tableName + " WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT " + logLimit);
+            PreparedStatement pstmt = conn.prepareStatement("SELECT player, block, unixtime FROM " + tableName + " WHERE x=? and y=? and z=? and world=? and dimension=? ORDER BY unixtime DESC LIMIT " + logLimit);
             pstmt.setInt(1,x);
             pstmt.setInt(2,y);
             pstmt.setInt(3,z);
-            pstmt.setString(4,String.valueOf(dimension));
+            pstmt.setString(4,world.toString());
+            pstmt.setString(5,String.valueOf(dimension));
             ResultSet resultSet = pstmt.executeQuery();
 
             long currentUnixtime = new Date().getTime() / 100L; //in 0.1s
@@ -188,7 +197,7 @@ public class SQLiteHelper extends DBHelper {
 
 
     @Override
-    public void setupDatabase() {
+    public void setupDatabase() { //To-Do: Improve storage efficiency by creating a "palyer" "world" table which maps playerId/worldId to UUID, and then use worldId in the different tables. No need to repeat a lengthy ID millions of times
         String url = "jdbc:sqlite:SFUtil/blocklogs.db";
 
         try (Connection conn = DriverManager.getConnection(url)) {
@@ -201,6 +210,7 @@ public class SQLiteHelper extends DBHelper {
                         "y INT NOT NULL,\n" +
                         "z INT NOT NULL,\n" +
                         "unixtime INT NOT NULL,\n" +
+                        "world TEXT NOT NULL,\n" +
                         "dimension CHAR(1) NOT NULL\n" +
                         ");";
                 String createPlace =  "CREATE TABLE place (\n" +
@@ -210,6 +220,7 @@ public class SQLiteHelper extends DBHelper {
                         "y INT NOT NULL,\n" +
                         "z INT NOT NULL,\n" +
                         "unixtime INT NOT NULL,\n" +
+                        "world TEXT NOT NULL,\n" +
                         "dimension CHAR(1) NOT NULL\n" +
                         ");";
                 String createChest =  "CREATE TABLE chest (\n" +
@@ -221,6 +232,7 @@ public class SQLiteHelper extends DBHelper {
                         "y INT NOT NULL,\n" +
                         "z INT NOT NULL,\n" +
                         "unixtime INT NOT NULL,\n" +
+                        "world TEXT NOT NULL,\n" +
                         "dimension CHAR(1) NOT NULL\n" +
                         ");";
                 statement.execute(createBreak);

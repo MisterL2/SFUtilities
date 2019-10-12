@@ -61,7 +61,7 @@ public class GetChestLog extends DBCommand {
                         chestLog = dbHelper.getChestLog(x, y, z, world.getUniqueId(), getDimensionId(src, args));
                     }
 
-                    String chestLogString = chestLog.entrySet().stream().sorted(Comparator.comparingLong(Map.Entry::getValue)).limit(dbHelper.getLogLimit()).map(e -> (e.getKey() + TimeConverter.secondsToTimeString(e.getValue()))).collect(Collectors.joining("\n"));
+                    String chestLogString = chestLog.entrySet().stream().sorted((e1,e2) -> ((int) (e2.getValue() - e1.getValue()))).limit(dbHelper.getLogLimit()).map(e -> (e.getKey() + TimeConverter.secondsToTimeString(e.getValue()) + " ago!")).collect(Collectors.joining("\n"));
                     src.sendMessage(Text.of(chestLogString));
                     return CommandResult.success();
                 })

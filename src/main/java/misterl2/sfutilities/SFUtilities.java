@@ -136,6 +136,7 @@ public class SFUtilities {
         if(rootNode == null || rootNode.getNode("logging").getBoolean(true)) {
             activatedCommands.add(new GetBlockBreakLog(dbHelper, logger, "blog", "breaklog", "blockbreaklog"));
             activatedCommands.add(new GetBlockPlaceLog(dbHelper, logger, "plog", "placelog", "blockplacelog"));
+            activatedCommands.add(new GetChestLog(dbHelper, logger, "clog", "chestlog"));
         }
         //Create, log and register the selected commands
         for (Command command: activatedCommands) {

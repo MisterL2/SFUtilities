@@ -3,39 +3,30 @@ package misterl2.sfutilities.logging;
 import misterl2.sfutilities.database.DBHelper;
 import misterl2.sfutilities.util.TimeConverter;
 import org.slf4j.Logger;
+import org.spongepowered.api.CatalogType;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockState;
-import org.spongepowered.api.block.tileentity.TileEntityArchetype;
-import org.spongepowered.api.block.tileentity.TileEntityType;
-import org.spongepowered.api.block.tileentity.carrier.Chest;
-import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
-import org.spongepowered.api.data.*;
-import org.spongepowered.api.data.key.Key;
-import org.spongepowered.api.data.manipulator.DataManipulator;
-import org.spongepowered.api.data.merge.MergeFunction;
-import org.spongepowered.api.data.persistence.InvalidDataException;
-import org.spongepowered.api.data.value.BaseValue;
-import org.spongepowered.api.data.value.immutable.ImmutableValue;
+import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
-import org.spongepowered.api.event.cause.EventContextKey;
 import org.spongepowered.api.event.filter.cause.Root;
-import org.spongepowered.api.event.item.inventory.*;
+import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
-import org.spongepowered.api.item.inventory.*;
+import org.spongepowered.api.item.inventory.BlockCarrier;
+import org.spongepowered.api.item.inventory.Inventory;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
+import org.spongepowered.api.item.inventory.MultiBlockCarrier;
 import org.spongepowered.api.item.inventory.property.SlotIndex;
 import org.spongepowered.api.item.inventory.transaction.SlotTransaction;
 import org.spongepowered.api.item.inventory.type.CarriedInventory;
-import org.spongepowered.api.item.inventory.type.TileEntityInventory;
-import org.spongepowered.api.text.translation.Translation;
-import org.spongepowered.api.util.Direction;
-import org.spongepowered.api.world.LocatableBlock;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -60,11 +51,6 @@ public class BlockEventListener {
 //            logger.info("Location");
 
 
-            String blockName = brokenBlock.getState().getType().getName();
-            if (blockName.contains(":")) { //Remove prefix
-                String[] splitBlockName = blockName.split(":");
-                blockName = splitBlockName[1]; //The part after the prefix
-            }
 
             if (!brokenBlock.getLocation().isPresent()) {
                 logger.error("Wtf why is there no location for the block that was placed?!");
@@ -77,7 +63,7 @@ public class BlockEventListener {
             int blockZ = blockLocation.getBlockZ();
 
 //            logger.info("should call dbhelper now!");
-            dbHelper.logBlockBreak(player.getUniqueId().toString(), blockName, blockX, blockY, blockZ, TimeConverter.getUnixTime(), blockLocation.getExtent().getUniqueId(), getDimensionChar(blockLocation));
+            dbHelper.logBlockBreak(player.getUniqueId().toString(), getNiceBlockName(brokenBlock.getState().getType()), blockX, blockY, blockZ, TimeConverter.getUnixTime(), blockLocation.getExtent().getUniqueId(), getDimensionChar(blockLocation));
         }
     }
 
@@ -88,11 +74,7 @@ public class BlockEventListener {
 
             BlockSnapshot placedBlock = t.getFinal();
 //            logger.info(placedBlock.getLocation().toString());
-            String blockName = placedBlock.getState().getType().getName();
-            if (blockName.contains(":")) { //Remove prefix
-                String[] splitBlockName = blockName.split(":");
-                blockName = splitBlockName[1]; //The part after the prefix
-            }
+
 
             if (!placedBlock.getLocation().isPresent()) {
                 logger.error("Wtf why is there no location for the block that was placed?!");
@@ -105,7 +87,7 @@ public class BlockEventListener {
             int blockZ = blockLocation.getBlockZ();
 
 //            logger.info("should call dbhelper now!");
-            dbHelper.logBlockPlace(player.getUniqueId().toString(), blockName, blockX, blockY, blockZ, TimeConverter.getUnixTime(), blockLocation.getExtent().getUniqueId(), getDimensionChar(blockLocation));
+            dbHelper.logBlockPlace(player.getUniqueId().toString(), getNiceBlockName(placedBlock.getState().getType()), blockX, blockY, blockZ, TimeConverter.getUnixTime(), blockLocation.getExtent().getUniqueId(), getDimensionChar(blockLocation));
         }
     }
 
@@ -152,17 +134,19 @@ public class BlockEventListener {
                 chestLocation = getMultiBlockCarrierLocation((MultiBlockCarrier) carrier, getIndex(validTransaction), capacity);
             }
             char action = 'I'; // I = Insert, R = Remove
-            String blockName = validTransaction.getOriginal().getType().getName();
-            System.out.println(blockName);
+            ItemType type;
+
             System.out.println("??");
             System.out.println(validTransaction.getFinal().getQuantity());
             System.out.println(validTransaction.getOriginal().getQuantity());
             int quantityChange = validTransaction.getFinal().getQuantity() - validTransaction.getOriginal().getQuantity();
             if(quantityChange < 0) { //Itemstack quantity is lower after the transaction than it was before.
                 action = 'R';
-                blockName = validTransaction.getFinal().getType().getName();
+                type = validTransaction.getFinal().getType();
             }
-            dbHelper.logChestInteraction(player.getUniqueId().toString(),action, blockName, quantityChange, chestLocation.getBlockX(), chestLocation.getBlockY(), chestLocation.getBlockZ(), TimeConverter.getUnixTime(), chestLocation.getExtent().getUniqueId(), getDimensionChar(chestLocation));
+            type = validTransaction.getOriginal().getType();
+            System.out.println(type);
+            dbHelper.logChestInteraction(player.getUniqueId().toString(),action, getNiceBlockName(type), Math.abs(quantityChange), chestLocation.getBlockX(), chestLocation.getBlockY(), chestLocation.getBlockZ(), TimeConverter.getUnixTime(), chestLocation.getExtent().getUniqueId(), getDimensionChar(chestLocation));
         }
 
     }
@@ -199,5 +183,12 @@ public class BlockEventListener {
         return maybeChestCoords.get();
     }
 
+    private String getNiceBlockName(CatalogType type) {
+        String blockName = type.getName();
+        if (blockName.contains(":")) { //Remove prefix
+            return blockName.split(":")[1]; //The part after the prefix
+        }
+        return blockName;
+    }
 
 }

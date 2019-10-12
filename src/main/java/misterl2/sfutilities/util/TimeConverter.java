@@ -34,7 +34,7 @@ public class TimeConverter {
         }
 
         relativeTime = minutes + " min ";
-        if(minutes<10) {
+        if(minutes<30) {
             relativeTime += "and " + timeInSeconds + " sec"; //timeInSeconds is now the remaining time in seconds
         }
 
