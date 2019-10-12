@@ -7,8 +7,10 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
+import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.world.Locatable;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,8 +42,8 @@ public class GetBlockBreakLog extends DBCommand {
                     char dimensionId;
                     Optional<String> maybeDimension = args.getOne("dimension");
                     if(!maybeDimension.isPresent()) {
-                        if(src instanceof Player) { //If src is a player, substitute in their current dimension, otherwise assume 'O' for OVERWORLD
-                            dimensionId = ((Player) src).getLocation().getExtent().getDimension().getType().toString().charAt(0);
+                        if(src instanceof Locatable) { //If src is a player or something else that can be located, substitute in their current dimension, otherwise assume 'O' for OVERWORLD
+                            dimensionId = ((Locatable) src).getLocation().getExtent().getDimension().getType().toString().charAt(0);
                         } else {
                             dimensionId = 'O';
                         }

@@ -103,6 +103,14 @@ public class SFUtilities {
     }
 
     private void buildCommands(DBHelper dbHelper, ConfigurationNode rootNode) {
+        /* TBD
+
+        -> GetBlockPlace by player (in case they placed TNT / lava / water and its hard to pinpoint a specific block), then you can check the blocks they placed.
+        ^^^^ Allow filtering by block and
+        ->
+
+
+        */
         if(rootNode==null) {
             logger.warn("Config could not be loaded, using defaults!");
         }

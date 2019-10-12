@@ -39,6 +39,11 @@ public class SQLiteHelper implements DBHelper {
         logBlockChange("PLACE",playerUUID,block,x,y,z,unixTime,dimensionId);
     }
 
+    @Override
+    public void logChestInteraction(String playerUUID, String action, String block, int amount, int x, int y, int z, long unixTime, char dimensionId) {
+        
+    }
+
     private void logBlockChange(String tableName, String playerUUID, String block, int x, int y, int z, long unixTime, char dimensionId) {
         try (Connection conn = cpds.getConnection()){
             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO " + tableName + " VALUES (?,?,?,?,?,?,?)");
@@ -70,10 +75,15 @@ public class SQLiteHelper implements DBHelper {
         return getBlockChangedLog("place",x,y,z,dimension);
     }
 
+    @Override
+    public List<String> getChestLog(int x, int y, int z, char dimension) {
+        return null;
+    }
+
     private List<String> getBlockChangedLog(String tableName, int x, int y, int z, char dimension) {
         List<String> logs = new ArrayList<>();
         try (Connection conn = cpds.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT player, block, unixtime FROM " + tableName + " WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT 10");
+            PreparedStatement pstmt = conn.prepareStatement("SELECT player, block, unixtime FROM " + tableName + " WHERE x=? and y=? and z=? and dimension=? ORDER BY unixtime DESC LIMIT 20");
             pstmt.setInt(1,x);
             pstmt.setInt(2,y);
             pstmt.setInt(3,z);
@@ -138,6 +148,16 @@ public class SQLiteHelper implements DBHelper {
                 String createPlace =  "CREATE TABLE place (\n" +
                 "player TEXT NOT NULL,\n" +
                         "block TEXT NOT NULL,\n" +
+                        "x INT NOT NULL,\n" +
+                        "y INT NOT NULL,\n" +
+                        "z INT NOT NULL,\n" +
+                        "unixtime INT NOT NULL,\n" +
+                        "dimension CHAR(1) NOT NULL\n" +
+                        ");";
+                String createChest =  "CREATE TABLE chest (\n" +
+                        "player TEXT NOT NULL,\n" +
+                        "item TEXT NOT NULL,\n" +
+                        "amount INT NOT NULL,\n" +
                         "x INT NOT NULL,\n" +
                         "y INT NOT NULL,\n" +
                         "z INT NOT NULL,\n" +

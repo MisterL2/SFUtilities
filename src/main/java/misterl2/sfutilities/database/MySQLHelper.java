@@ -18,6 +18,11 @@ public class MySQLHelper implements DBHelper {
 
     }
 
+    @Override
+    public void logChestInteraction(String playerUUID, String action, String block, int amount, int x, int y, int z, long unixTime, char dimensionId) {
+
+    }
+
 
     @Override
     public List<String> getBlockBreakLog(int x, int y, int z, char dimension) {
@@ -26,6 +31,11 @@ public class MySQLHelper implements DBHelper {
 
     @Override
     public List<String> getBlockPlaceLog(int x, int y, int z, char dimension) {
+        return null;
+    }
+
+    @Override
+    public List<String> getChestLog(int x, int y, int z, char dimension) {
         return null;
     }
 
