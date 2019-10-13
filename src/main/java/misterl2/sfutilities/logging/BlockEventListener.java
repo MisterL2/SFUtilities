@@ -5,7 +5,6 @@ import misterl2.sfutilities.util.TimeConverter;
 import org.slf4j.Logger;
 import org.spongepowered.api.CatalogType;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
@@ -16,7 +15,6 @@ import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.BlockCarrier;
 import org.spongepowered.api.item.inventory.Inventory;
-import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.item.inventory.MultiBlockCarrier;
 import org.spongepowered.api.item.inventory.property.SlotIndex;
 import org.spongepowered.api.item.inventory.transaction.SlotTransaction;
@@ -97,7 +95,7 @@ public class BlockEventListener {
         List<SlotTransaction> transactions = event.getTransactions();
         if (transactions.isEmpty()) {
             return;
-        } // Return immediately to avoid wasting performance on players spam-clicking their inventories
+        }
 
 
         Inventory parent = transactions.get(0).getSlot().parent(); //Get(0) is guaranteed to exist, as the list is not empty. Parent also necessarily exists, as a slot cannot exist without parent
@@ -111,7 +109,7 @@ public class BlockEventListener {
         }
         BlockCarrier carrier = (BlockCarrier) containerInv.getCarrier().get();
         int capacity = containerInv.first().capacity();
-
+        System.out.println("Transaction noted!");
         Predicate<SlotTransaction> filter = slotTransaction -> {
             if (slotTransaction.getOriginal().getType() == ItemTypes.NONE && slotTransaction.getFinal().getType() == ItemTypes.NONE) { //Empty transaction, random click
                 System.out.println("Empty slot transfer!");
@@ -126,31 +124,51 @@ public class BlockEventListener {
         };
 
         List<SlotTransaction> validTransactions = transactions.stream().filter(filter).collect(Collectors.toList());
-
+        if(validTransactions.isEmpty()) {
+            return;
+        }
         Location<World> chestLocation = carrier.getLocation();
 
+        int quantityChange = 0;
+        ItemType type = null;
+        char action = 'X'; // I = Insert, R = Remove
         for(SlotTransaction validTransaction : validTransactions) {
             if(carrier instanceof  MultiBlockCarrier) { //If it is a doublechest, overwrite the chestLocation value with the value of the specific sub-chest being targeted
                 chestLocation = getMultiBlockCarrierLocation((MultiBlockCarrier) carrier, getIndex(validTransaction), capacity);
             }
-            char action = 'I'; // I = Insert, R = Remove
-            ItemType type;
 
             System.out.println("??");
+
+            ItemType probablyType;
+
             System.out.println(validTransaction.getFinal().getQuantity());
             System.out.println(validTransaction.getOriginal().getQuantity());
-            int quantityChange = validTransaction.getFinal().getQuantity() - validTransaction.getOriginal().getQuantity();
+
+
+            quantityChange += validTransaction.getFinal().getQuantity() - validTransaction.getOriginal().getQuantity();
             if(quantityChange < 0) { //Itemstack quantity is lower after the transaction than it was before.
+                if(action == 'I') {
+                    logger.error("Opposite action!");
+                }
                 action = 'R';
-                type = validTransaction.getFinal().getType();
+                probablyType = validTransaction.getOriginal().getType();
+            } else {
+                if(action == 'R') {
+                    logger.error("Opposite action!");
+                }
+                action = 'I';
+                probablyType = validTransaction.getFinal().getType();
             }
-            type = validTransaction.getOriginal().getType();
+
+            if(type!=null && probablyType != type) {
+                logger.warn("Combined mass-transactions of several items at once are not supported for logging currently!\n" + type + " and " + validTransaction.getFinal().getType());
+                return;
+            }
+            type = probablyType;
             System.out.println(type);
-            dbHelper.logChestInteraction(player.getUniqueId().toString(),action, getNiceBlockName(type), Math.abs(quantityChange), chestLocation.getBlockX(), chestLocation.getBlockY(), chestLocation.getBlockZ(), TimeConverter.getUnixTime(), chestLocation.getExtent().getUniqueId(), getDimensionChar(chestLocation));
         }
-
+        dbHelper.logChestInteraction(player.getUniqueId().toString(),action, getNiceBlockName(type), Math.abs(quantityChange), chestLocation.getBlockX(), chestLocation.getBlockY(), chestLocation.getBlockZ(), TimeConverter.getUnixTime(), chestLocation.getExtent().getUniqueId(), getDimensionChar(chestLocation));
     }
-
 
 
     private char getDimensionChar(Location<World> location) {

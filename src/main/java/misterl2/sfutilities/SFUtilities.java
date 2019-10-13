@@ -1,13 +1,11 @@
 package misterl2.sfutilities;
 
 import com.google.inject.Inject;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 import misterl2.sfutilities.commands.*;
 import misterl2.sfutilities.database.DBHelper;
-import misterl2.sfutilities.logging.BlockEventListener;
 import misterl2.sfutilities.database.SQLiteHelper;
+import misterl2.sfutilities.logging.BlockEventListener;
 import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.ValueType;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
@@ -15,11 +13,10 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.spec.CommandSpec;
-import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.config.DefaultConfig;
+import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
-import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.plugin.Plugin;
 
 import java.io.File;
@@ -28,7 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Plugin(
         id = "sfutilities",

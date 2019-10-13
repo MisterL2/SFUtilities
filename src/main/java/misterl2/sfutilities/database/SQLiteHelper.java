@@ -1,6 +1,5 @@
 package misterl2.sfutilities.database;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 import misterl2.sfutilities.util.TimeConverter;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
@@ -22,20 +21,22 @@ public class SQLiteHelper extends DBHelper {
     //changeType refers to the event action, so for Block.BREAK it would be "BREAK", for Block.PLACE it would be "PLACE", etc
     @Override
     public void logBlockBreak(String playerUUID, String block, int x, int y, int z, long unixTime, UUID world, char dimension) {
-        logger.info("Logging block!");
-        logger.info("BREAK" + " " + playerUUID + " " + block + " " + x + " " + y + " "  + z + " " + unixTime + " " + dimension);
+//        logger.info("Logging block!");
+//        logger.info("BREAK" + " " + playerUUID + " " + block + " " + x + " " + y + " "  + z + " " + unixTime + " " + dimension);
         logBlockChange("BREAK",playerUUID,block,x,y,z,unixTime, world, dimension);
     }
 
     @Override
     public void logBlockPlace(String playerUUID, String block, int x, int y, int z, long unixTime, UUID world, char dimension) {
-        logger.info("Logging block!");
-        logger.info("BREAK" + " " + playerUUID + " " + block + " " + x + " " + y + " "  + z + " " + unixTime + " " + dimension);
+//        logger.info("Logging block!");
+//        logger.info("PLACE" + " " + playerUUID + " " + block + " " + x + " " + y + " "  + z + " " + unixTime + " " + dimension);
         logBlockChange("PLACE",playerUUID,block,x,y,z,unixTime, world, dimension);
     }
 
     @Override
     public void logChestInteraction(String playerUUID, char action, String block, int amount, int x, int y, int z, long unixTime, UUID world, char dimension) {
+        System.out.println("Logging chest change!");
+        logger.info("CHESTINTERACT" + " " + playerUUID + " " + action + " " + block + " " + amount + " " + x + " " + y + " "  + z + " " + unixTime + " " + world.toString() + " " + dimension);
         try (Connection conn = cpds.getConnection()){
             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO chest VALUES (?,?,?,?,?,?,?,?,?,?)");
             pstmt.setString(1,playerUUID);
@@ -91,8 +92,9 @@ public class SQLiteHelper extends DBHelper {
     @Override
     public Map<String,Long> getChestLog(int x, int y, int z, UUID world, char dimension) {
         Map<String,Long> logs = new HashMap<>();
+        System.out.println(world.toString());
         try (Connection conn = cpds.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT player, action, item, amount, unixtime FROM chest WHERE x=? and y=? and z=? and world=? and dimension=? ORDER BY unixtime DESC LIMIT " + logLimit);
+            PreparedStatement pstmt = conn.prepareStatement("SELECT player, action, item, amount, unixtime FROM chest WHERE x=? and y=? and z=? and world=? and dimension=? ORDER BY unixtime DESC LIMIT " + getLogLimit());
             pstmt.setInt(1,x);
             pstmt.setInt(2,y);
             pstmt.setInt(3,z);
@@ -132,9 +134,9 @@ public class SQLiteHelper extends DBHelper {
                 }
                 String logRow = new StringBuilder()
                         .append(playerName).append(" ")
-                        .append(action)
-                        .append(block).append("x")
-                        .append(amount).append(" ")
+                        .append(action).append(" ")
+                        .append(amount).append("x ")
+                        .append(block).append(" ")
                         .toString();
                 logs.put(logRow, timeSince);
             }
@@ -142,6 +144,7 @@ public class SQLiteHelper extends DBHelper {
             logger.error(e.getMessage());
             e.printStackTrace();
         }
+        System.out.println("Log rows: " + logs.size());
         return logs; //Unsorted! But contains the timeSince for sorting
     }
 
@@ -149,7 +152,7 @@ public class SQLiteHelper extends DBHelper {
     private List<String> getBlockChangedLog(String tableName, int x, int y, int z, UUID world, char dimension) {
         List<String> logs = new ArrayList<>();
         try (Connection conn = cpds.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT player, block, unixtime FROM " + tableName + " WHERE x=? and y=? and z=? and world=? and dimension=? ORDER BY unixtime DESC LIMIT " + logLimit);
+            PreparedStatement pstmt = conn.prepareStatement("SELECT player, block, unixtime FROM " + tableName + " WHERE x=? and y=? and z=? and world=? and dimension=? ORDER BY unixtime DESC LIMIT " + getLogLimit());
             pstmt.setInt(1,x);
             pstmt.setInt(2,y);
             pstmt.setInt(3,z);

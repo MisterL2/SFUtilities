@@ -7,10 +7,7 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
-import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.world.Locatable;
 import org.spongepowered.api.world.World;
 
 import java.util.List;
@@ -50,7 +47,7 @@ public class GetBlockBreakLog extends DBCommand {
                     List<String> blockBreakLog = dbHelper.getBlockBreakLog(x, y, z, world.getUniqueId(), getDimensionId(src, args));
                     src.sendMessage(Text.of("=============================="));
                     if(blockBreakLog.isEmpty()) {
-                        src.sendMessage(Text.of("There are no break logs for these coordinates in this dimension!"));
+                        src.sendMessage(Text.of("There are no break logs for this location!"));
                     } else {
                         for (String logRow: blockBreakLog) {
                             src.sendMessage(Text.of(logRow));

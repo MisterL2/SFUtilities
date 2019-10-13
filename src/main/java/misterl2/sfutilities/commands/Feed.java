@@ -1,6 +1,5 @@
 package misterl2.sfutilities.commands;
 
-import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;

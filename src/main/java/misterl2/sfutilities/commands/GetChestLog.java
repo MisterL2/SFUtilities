@@ -3,8 +3,6 @@ package misterl2.sfutilities.commands;
 import misterl2.sfutilities.database.DBHelper;
 import misterl2.sfutilities.util.TimeConverter;
 import org.slf4j.Logger;
-import org.spongepowered.api.Server;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
@@ -13,11 +11,13 @@ import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.item.inventory.MultiBlockCarrier;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.world.Locatable;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class GetChestLog extends DBCommand {
@@ -61,8 +61,20 @@ public class GetChestLog extends DBCommand {
                         chestLog = dbHelper.getChestLog(x, y, z, world.getUniqueId(), getDimensionId(src, args));
                     }
 
+                    System.out.println("Amount in getChestLog " + chestLog.size());
+
                     String chestLogString = chestLog.entrySet().stream().sorted((e1,e2) -> ((int) (e2.getValue() - e1.getValue()))).limit(dbHelper.getLogLimit()).map(e -> (e.getKey() + TimeConverter.secondsToTimeString(e.getValue()) + " ago!")).collect(Collectors.joining("\n"));
-                    src.sendMessage(Text.of(chestLogString));
+
+                    System.out.println("Log limit: " + dbHelper.getLogLimit());
+
+                    src.sendMessage(Text.of("=============================="));
+                    if(chestLogString.isEmpty()) {
+                        src.sendMessage(Text.of("There are no chest logs for this location!"));
+                    } else {
+                        src.sendMessage(Text.of(chestLogString));
+                    }
+
+                    src.sendMessage(Text.of("=============================="));
                     return CommandResult.success();
                 })
                 .build();

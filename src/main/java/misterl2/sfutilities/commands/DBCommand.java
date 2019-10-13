@@ -2,7 +2,6 @@ package misterl2.sfutilities.commands;
 
 import misterl2.sfutilities.database.DBHelper;
 import org.slf4j.Logger;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.world.Locatable;
