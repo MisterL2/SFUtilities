@@ -91,7 +91,7 @@ public class BlockEventListener {
 
     @Listener
     public void onItemChange(ClickInventoryEvent event, @Root Player player) { //Despite the unintuitive name, ClickInventoryName manages transactions between containers by players
-        System.out.println("########ON ITEM CHANGE#########");
+//        System.out.println("########ON ITEM CHANGE#########");
         List<SlotTransaction> transactions = event.getTransactions();
         if (transactions.isEmpty()) {
             return;
@@ -109,15 +109,15 @@ public class BlockEventListener {
         }
         BlockCarrier carrier = (BlockCarrier) containerInv.getCarrier().get();
         int capacity = containerInv.first().capacity();
-        System.out.println("Transaction noted!");
+//        System.out.println("Transaction noted!");
         Predicate<SlotTransaction> filter = slotTransaction -> {
             if (slotTransaction.getOriginal().getType() == ItemTypes.NONE && slotTransaction.getFinal().getType() == ItemTypes.NONE) { //Empty transaction, random click
-                System.out.println("Empty slot transfer!");
+//                System.out.println("Empty slot transfer!");
                 return false;
             }
             int index = getIndex(slotTransaction);
             if (index < 0 || index >= capacity) {
-                System.out.println("Transfer outside of container!");
+//                System.out.println("Transfer outside of container!");
                 return false;
             }
             return true;
@@ -137,12 +137,10 @@ public class BlockEventListener {
                 chestLocation = getMultiBlockCarrierLocation((MultiBlockCarrier) carrier, getIndex(validTransaction), capacity);
             }
 
-            System.out.println("??");
-
             ItemType probablyType;
 
-            System.out.println(validTransaction.getFinal().getQuantity());
-            System.out.println(validTransaction.getOriginal().getQuantity());
+//            System.out.println(validTransaction.getFinal().getQuantity());
+//            System.out.println(validTransaction.getOriginal().getQuantity());
 
 
             quantityChange += validTransaction.getFinal().getQuantity() - validTransaction.getOriginal().getQuantity();
@@ -167,6 +165,7 @@ public class BlockEventListener {
             type = probablyType;
             System.out.println(type);
         }
+        System.out.println("Should call dbHelper now!");
         dbHelper.logChestInteraction(player.getUniqueId().toString(),action, getNiceBlockName(type), Math.abs(quantityChange), chestLocation.getBlockX(), chestLocation.getBlockY(), chestLocation.getBlockZ(), TimeConverter.getUnixTime(), chestLocation.getExtent().getUniqueId(), getDimensionChar(chestLocation));
     }
 

@@ -75,6 +75,10 @@ public class SFUtilities {
                 ConfigurationNode logLimit = logging.getNode("max-logs-shown");
                 logLimit.setValue(20);
 
+                ConfigurationNode adminfun = commands.getNode("fun");
+                ConfigurationNode lightningSpam = adminfun.getNode("lightning-spam");
+                lightningSpam.setValue(true);
+
                 System.out.println(configLoader.canSave());
                 configLoader.save(rootNode);
             }
@@ -126,6 +130,10 @@ public class SFUtilities {
         if(rootNode == null || rootNode.getNode("commands","heal").getBoolean(true)) {
             activatedCommands.add(new Heal(logger, "heal", "restorehealth"));
             activatedCommands.add(new SetHealth(logger, "sethealth", "healthset"));
+        }
+
+        if(rootNode == null || rootNode.getNode("commands","fun","lightning-spam").getBoolean(true)) {
+            activatedCommands.add(new LightningSpam(logger, this,"ls", "lspam", "lightningspam"));
         }
 
         //If logging is enabled
