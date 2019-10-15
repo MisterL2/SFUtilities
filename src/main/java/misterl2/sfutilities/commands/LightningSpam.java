@@ -14,6 +14,7 @@ import org.spongepowered.api.world.Locatable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -35,7 +36,10 @@ public class LightningSpam extends Command {
                 .executor((CommandSource src, CommandContext args) -> {
                     Optional<Integer> times = args.getOne("times");
                     final int repetitions = times.isPresent() ? times.get() : 15;
-
+                    if(repetitions < 0) {
+                        logger.error("Error: Negative amount of times specified!");
+                        return CommandResult.empty();
+                    }
                     final Collection<Locatable> targets; //args.getAll("targets") Is guaranteed to be a Collection<Entity>, but if I use the commandsource later on, a non-player commandsource such as a commandblock would also be valid
 
                     if(args.getAll("targets").isEmpty()) {
@@ -43,7 +47,7 @@ public class LightningSpam extends Command {
                             logger.error("No target specified for LightningSpam and the CommandSource is not Locatable!");
                             return CommandResult.empty();
                         }
-                        targets = new ArrayList<>();
+                        targets = new HashSet<>();
                         targets.add((Locatable) src); //Only add the commandsource if no other player is specified
                     } else {
                         targets = args.getAll("targets");

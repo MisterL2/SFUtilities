@@ -79,6 +79,9 @@ public class SFUtilities {
                 ConfigurationNode lightningSpam = adminfun.getNode("lightning-spam");
                 lightningSpam.setValue(true);
 
+                ConfigurationNode lightningCircle = adminfun.getNode("lightning-circle");
+                lightningCircle.setValue(true);
+
                 System.out.println(configLoader.canSave());
                 configLoader.save(rootNode);
             }
@@ -134,6 +137,10 @@ public class SFUtilities {
 
         if(rootNode == null || rootNode.getNode("commands","fun","lightning-spam").getBoolean(true)) {
             activatedCommands.add(new LightningSpam(logger, this,"ls", "lspam", "lightningspam"));
+        }
+
+        if(rootNode == null || rootNode.getNode("commands","fun","lightning-circle").getBoolean(true)) {
+            activatedCommands.add(new LightningCircle(logger, this,"lc", "lcircle", "lightningcircle"));
         }
 
         //If logging is enabled
