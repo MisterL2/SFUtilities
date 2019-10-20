@@ -3,7 +3,7 @@ package misterl2.sfutilities;
 import com.google.inject.Inject;
 import misterl2.sfutilities.commands.*;
 import misterl2.sfutilities.database.DBHelper;
-import misterl2.sfutilities.database.SQLiteHelper;
+import misterl2.sfutilities.database.H2Helper;
 import misterl2.sfutilities.logging.BlockEventListener;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ValueType;
@@ -19,7 +19,6 @@ import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.plugin.Plugin;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -92,18 +91,10 @@ public class SFUtilities {
         }
         logger.info("Finished loading config!");
         Integer logLimit = (Integer) rootNode.getNode("logging", "max-logs-shown").getValue();
-        DBHelper dbHelper = new SQLiteHelper(logger,logLimit);
+        DBHelper dbHelper = new H2Helper(logger,logLimit, "jdbc:h2:./SFUtil/blocklogs");
         buildCommands(dbHelper,rootNode);
-        Sponge.getEventManager().registerListeners(this, new BlockEventListener(logger,dbHelper));
+        Sponge.getEventManager().registerListeners(this, new BlockEventListener(this, logger,dbHelper));
         logger.info("SFUtilities loaded!");
-
-        boolean databaseExists = new File("SFUtil/blocklogs.db").exists();
-        if(!databaseExists) {
-            logger.warn("No SQLite database found! Creating a new one.");
-            new File("SFUtil").mkdir(); //Attempts to make a new folder for the database. If it already exists, returns false and nothing else happens.
-            dbHelper.setupDatabase();
-        }
-
 
 
     }

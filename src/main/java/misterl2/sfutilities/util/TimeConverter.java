@@ -41,7 +41,7 @@ public class TimeConverter {
         return relativeTime;
     }
 
-    public static long getUnixTime() {
-        return new Date().getTime() / 100L; //in 0.1s
+    public static long getUnixTimeSinceRelease() {
+        return (new Date().getTime() - 1571427735000L)/ 100L; //in 0.1s. To save storage space in the DB, it subtracts the unixtime till 18.10.2019 (time of first release)
     }
 }

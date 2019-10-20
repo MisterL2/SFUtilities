@@ -1,6 +1,8 @@
 package misterl2.sfutilities.commands;
 
 import misterl2.sfutilities.database.DBHelper;
+import misterl2.sfutilities.database.datatypes.ChestLogRow;
+import misterl2.sfutilities.database.datatypes.LocationDataClass;
 import misterl2.sfutilities.util.TimeConverter;
 import org.slf4j.Logger;
 import org.spongepowered.api.block.BlockState;
@@ -14,10 +16,7 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class GetChestLog extends DBCommand {
@@ -51,19 +50,23 @@ public class GetChestLog extends DBCommand {
                     World world = maybeWorld.get();
 
                     BlockState block = world.getBlock(x, y, z);
-                    Map<String,Long> chestLog = new HashMap<>();
+                    List<ChestLogRow> chestLog = new ArrayList<>();
                     if(block instanceof MultiBlockCarrier) {
                         List<Location<World>> locations = ((MultiBlockCarrier) block).getLocations();
                         for(Location<World> location : locations) {
-                            chestLog.putAll(dbHelper.getChestLog(location.getBlockX(), location.getBlockY(), location.getBlockZ(), world.getUniqueId(), getDimensionId(src, args)));
+                            System.out.println("Multi-block carrier being read from!");
+                            LocationDataClass locationDataClass = new LocationDataClass(world.getUniqueId(), getDimensionId(src, args), location.getBlockX(), location.getBlockY(), location.getBlockZ());
+                            chestLog.addAll(dbHelper.getChestLog(locationDataClass));
                         }
                     } else {
-                        chestLog = dbHelper.getChestLog(x, y, z, world.getUniqueId(), getDimensionId(src, args));
+                        System.out.println("Single-block carrier being read from!");
+                        LocationDataClass locationDataClass = new LocationDataClass(world.getUniqueId(), getDimensionId(src, args), x, y, z);
+                        chestLog = dbHelper.getChestLog(locationDataClass);
                     }
 
-                    System.out.println("Amount in getChestLog " + chestLog.size());
 
-                    String chestLogString = chestLog.entrySet().stream().sorted((e1,e2) -> ((int) (e2.getValue() - e1.getValue()))).limit(dbHelper.getLogLimit()).map(e -> (e.getKey() + TimeConverter.secondsToTimeString(e.getValue()) + " ago!")).collect(Collectors.joining("\n"));
+                    chestLog.sort((e1, e2) -> (int) (e2.getUnixTimeSinceRelease() - e1.getUnixTimeSinceRelease()));
+                    String chestLogString = chestLog.stream().limit(dbHelper.getLogLimit()).map(e -> e.toString()).collect(Collectors.joining("\n"));
 
                     System.out.println("Log limit: " + dbHelper.getLogLimit());
 

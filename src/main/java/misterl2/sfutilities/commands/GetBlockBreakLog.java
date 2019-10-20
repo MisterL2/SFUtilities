@@ -1,6 +1,8 @@
 package misterl2.sfutilities.commands;
 
 import misterl2.sfutilities.database.DBHelper;
+import misterl2.sfutilities.database.datatypes.LocationDataClass;
+import misterl2.sfutilities.database.datatypes.LogRow;
 import org.slf4j.Logger;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
@@ -44,13 +46,14 @@ public class GetBlockBreakLog extends DBCommand {
                         return CommandResult.empty();
                     }
                     World world = maybeWorld.get();
-                    List<String> blockBreakLog = dbHelper.getBlockBreakLog(x, y, z, world.getUniqueId(), getDimensionId(src, args));
+                    LocationDataClass location = new LocationDataClass(world.getUniqueId(), getDimensionId(src, args), x, y, z);
+                    List<LogRow> blockBreakLog = dbHelper.getBlockBreakLog(location);
                     src.sendMessage(Text.of("=============================="));
                     if(blockBreakLog.isEmpty()) {
                         src.sendMessage(Text.of("There are no break logs for this location!"));
                     } else {
-                        for (String logRow: blockBreakLog) {
-                            src.sendMessage(Text.of(logRow));
+                        for (LogRow logRow: blockBreakLog) {
+                            src.sendMessage(Text.of(logRow.toString()));
                         }
                     }
                     src.sendMessage(Text.of("=============================="));

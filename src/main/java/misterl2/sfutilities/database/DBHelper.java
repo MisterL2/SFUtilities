@@ -1,31 +1,61 @@
 package misterl2.sfutilities.database;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import misterl2.sfutilities.database.datatypes.ChestLogRow;
+import misterl2.sfutilities.database.datatypes.LocationDataClass;
+import misterl2.sfutilities.database.datatypes.LogRow;
 import org.slf4j.Logger;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.service.sql.SqlService;
 
+import javax.sql.DataSource;
+import java.io.File;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 public abstract class DBHelper {
     protected final Logger logger;
-    protected final ComboPooledDataSource cpds;
     protected final int logLimit;
+    private final DataSource dataSource;
 
-    public DBHelper(Logger logger, int logLimit) {
+    public DBHelper(Logger logger, int logLimit, String path) {
         this.logger = logger; this.logLimit = logLimit;
-        cpds = new ComboPooledDataSource();
+
+        boolean databaseExists = new File("SFUtil/blocklogs.db").exists();
+        if(!databaseExists) {
+            this.logger.warn("No SQLite database found! Creating a new one.");
+            new File("SFUtil").mkdir(); //Attempts to make a new folder for the database. If it already exists, returns false and nothing else happens.
+        }
+        try {
+            dataSource = Sponge.getServiceManager().provideUnchecked(SqlService.class).getDataSource(path);
+        } catch (SQLException e) {
+            this.logger.error(e.getMessage());
+            throw new IllegalArgumentException("SQL Error in setup! ALL LOGGING WILL FAIL!");
+        }
+
+        this.setupDatabase();
     }
 
-    public abstract void logBlockBreak(String playerUUID, String block, int x, int y, int z, long unixTime, UUID world, char dimension);
-    public abstract void logBlockPlace(String playerUUID, String block, int x, int y, int z, long unixTime, UUID world, char dimension);
-    public abstract void logChestInteraction(String playerUUID, char action, String block, int amount, int x, int y, int z, long unixTime, UUID world, char dimension); // I = Insert, R = REMOVE
-    public abstract List<String> getBlockBreakLog(int x, int y, int z, UUID world, char dimension);
-    public abstract List<String> getBlockPlaceLog(int x, int y, int z, UUID world, char dimension);
-    public abstract Map<String,Long> getChestLog(int x, int y, int z, UUID world, char dimension); //The LONG in the map specifies timeSince. It is NOT sorted by time!
+    public abstract void logBlockBreak(LogRow logRow);
+    public abstract void logBlockPlace(LogRow logRow);
+    public abstract void logChestInteraction(ChestLogRow chestLogRow); // I = Insert, R = Remove; B = Break, P = Place;
+    public abstract List<LogRow> getBlockBreakLog(LocationDataClass location);
+    public abstract List<LogRow> getBlockPlaceLog(LocationDataClass location);
+    public abstract List<ChestLogRow> getChestLog(LocationDataClass location);
     public abstract void setupDatabase();
 
     public int getLogLimit() {
         return logLimit;
+    }
+
+    protected DataSource getDataSource() {
+        return this.dataSource;
+    }
+    protected void safeInsert(PreparedStatement pstmt) {
+        try {
+            pstmt.execute();
+        } catch (SQLException e) {
+            logger.warn("Database transaction failed: " + e.getMessage());
+        }
     }
 }
