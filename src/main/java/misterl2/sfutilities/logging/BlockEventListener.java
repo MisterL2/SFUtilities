@@ -177,10 +177,10 @@ public class BlockEventListener {
         UUID worldId = chestLocation.getExtent().getUniqueId();
         char dimensionChar = getDimensionChar(chestLocation);
         Task.builder().execute(() -> {
-                for(ItemTransfer itemTransfer : combinedItemTransfers) {
-                    LocationDataClass locationDataClass = new LocationDataClass(worldId, dimensionChar, x, y, z);
-                    ChestLogRow chestLogRow = new ChestLogRow(itemTransfer.getBlockName(), itemTransfer.getAmount(), timeSinceRelease, playerUUID, locationDataClass);
-                    dbHelper.logChestInteraction(chestLogRow);
+            for(ItemTransfer itemTransfer : combinedItemTransfers) {
+                LocationDataClass locationDataClass = new LocationDataClass(worldId, dimensionChar, x, y, z);
+                ChestLogRow chestLogRow = new ChestLogRow(itemTransfer.getBlockName(), itemTransfer.getAmount(), timeSinceRelease, playerUUID, locationDataClass);
+                dbHelper.logChestInteraction(chestLogRow);
             }
         }).async().submit(plugin);
     }

@@ -21,7 +21,7 @@ public abstract class DBHelper {
     public DBHelper(Logger logger, int logLimit, String path) {
         this.logger = logger; this.logLimit = logLimit;
 
-        boolean databaseExists = new File("SFUtil/blocklogs.db").exists();
+        boolean databaseExists = new File("SFUtil/blocklogs.mv.db").exists();
         if(!databaseExists) {
             this.logger.warn("No SQLite database found! Creating a new one.");
             new File("SFUtil").mkdir(); //Attempts to make a new folder for the database. If it already exists, returns false and nothing else happens.
